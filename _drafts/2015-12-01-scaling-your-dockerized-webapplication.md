@@ -40,10 +40,10 @@ As mentioned before I am using docker containers in this setup. Three different 
 The consul server is the consul-server container made by gliderlabs, to start it:
 
 {% highlight bash %}
-docker run --rm -p 8500:8500 gliderlabs/consul-server -bootstrap
+docker run --rm --name consul -p 8500:8500 gliderlabs/consul-server -bootstrap
 {% endhighlight %}
 
-to view the consul server ui, you can browse to the docker ip:8500, you can locate the ip with running the command:
+to view the consul server ui, you can browse to the docker_ip:8500, you can locate the ip with running the command:
 {% highlight bash %}
 docker-machine ip default
 {% endhighlight %}
