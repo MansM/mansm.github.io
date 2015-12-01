@@ -38,6 +38,7 @@ As mentioned before I am using docker containers in this setup. Three different 
 - Webservice with consul agent
 
 The consul server is the consul-server container made by gliderlabs, to start it:
+
 {% highlight bash %}
 docker run --rm -p 8500:8500 gliderlabs/consul-server -bootstrap
 {% endhighlight %}
