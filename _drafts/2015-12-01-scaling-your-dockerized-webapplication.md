@@ -17,7 +17,7 @@ You have an webapplication that became quite popular. You want to dynamically sc
 webapp. But you dont want to update manually your loadbalancer configuration. In this article I will show you how you can build an highly scalable 
 environment for your webapps using docker containers, but you should be able to use it the same way on vm's.
 
-##Tooling##
+##Tooling
 
 - Docker: In the current IT environment there is never enough speed, VM's are slow and containers are hot. Docker is currently the most popular container software.
 - Haproxy: Opensource load balancer for TCP and HTTP based services
@@ -27,10 +27,15 @@ environment for your webapps using docker containers, but you should be able to 
 
 Of the list above you only need to install the docker toolbox. You a can find it at the docker [website](https://www.docker.com/docker-toolbox)
 
-Overview
-In the image below you can see how the environment will be setup. As you can see I use three different parts of consul.
+##Overview
 
-![container overview](/images/2015-12-01-scaling-your-dockerized-webapplication/overview.png){:width="600px"}
+In the image below you can see how the environment will be setup. As you can see I use three different parts of consul. The agent tells the server it is online and which 
+sevices the machine/container has available. Consul template queries the server and replaces the configuration file of haproxy which it also notifies. On shutting down an
+webserver the consul agent notifies the server it is leaving and consul template will remove the server from the configuration file. 
+
+![container overview](/images/2015-12-01-scaling-your-dockerized-webapplication/overview.png)
+
+{:width="600px"}
 
 ##Docker containers##
 As mentioned before I am using docker containers in this setup. Three different containers can be identified:
@@ -112,7 +117,7 @@ CMD ["/usr/bin/supervisord"]
 [supervisord]
 nodaemon=true
 
-[program:haproxy]
+[program:apache]
 command=/usr/local/bin/apache2-foreground
 
 [program:consulagent]
@@ -122,13 +127,54 @@ command=consul agent -data-dir=/tmp/consul -join consul -config-dir /etc/consul.
 ###Load balancer
 
 ####Dockerfile
+{% highlight docker linenos %}
+FROM debian:latest
 
+MAINTAINER Mans Matulewicz
+
+ENV CONSUL_TEMPLATE_VERSION=0.10.0
+
+RUN apt-get update && apt-get install -y haproxy wget unzip supervisor
+RUN ( wget --no-check-certificate https://github.com/hashicorp/consul-template/releases/download/v${CONSUL_TEMPLATE_VERSION}/consul-template_${CONSUL_TEMPLATE_VERSION}_linux_amd64.tar.gz -O /tmp/consul_template.tar.gz && gunzip /tmp/consul_template.tar.gz && cd /tmp && tar xf /tmp/consul_template.tar && cd /tmp/consul-template* && mv consul-template /usr/bin && rm -rf /tmp/* )
+RUN apt-get clean
+
+RUN mkdir -p /var/log/supervisor
+
+COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+COPY haproxy.ctmpl /etc/haproxy.ctmpl
+COPY haproxy.json /etc/haproxy.json
+COPY haproxy.cfg /etc/haproxy/haproxy.cfg
+
+EXPOSE 80/tcp 9000/tcp
+CMD ["/usr/bin/supervisord"]
+{% endhighlight %}
 ####haproxy.cfg/ctml
-
+{% highlight aconf linenos %}
+backend nodes
+    mode http
+    option forwardfor
+    http-request set-header X-Forwarded-Port %[dst_port]
+    http-request add-header X-Forwarded-Proto https if { ssl_fc }
+    option httpchk HEAD / HTTP/1.1\r\nHost:localhost
+    balance roundrobin {{range service "web"}}
+    server {{.Node}} {{.Address}}:{{.Port}}{{end}}
+{% endhighlight %}
 ####haproxy.json
-
+{% highlight javascript linenos %}
+template {
+  source = "/etc/haproxy.ctmpl"
+  destination = "/etc/haproxy/haproxy.cfg"
+  command = "haproxy -f /etc/haproxy/haproxy.cfg -sf $(pidof haproxy) &"
+}
+{% endhighlight %}
 ####supervisord.conf
+{% highlight ini linenos %}
+[supervisord]
+nodaemon=true
 
+[program:consultemplate]
+command=consul-template -config=/etc/haproxy.json -consul=consul:8500
+{% endhighlight %}
 All the containers are listed in the docker-compose.yml. This file is used by docker-compose to run the multi-container environment.
 
 
