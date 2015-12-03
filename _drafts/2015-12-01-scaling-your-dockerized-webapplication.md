@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  "Scaling your dockerized webapplication"
+title:  "Scaling your webapplication with docker"
 categories: docker consul
 commentIssueId: 1
 ---
@@ -14,8 +14,8 @@ Contents
 </div>
 
 You have an webapplication that became quite popular. You want to dynamically scale up and down by adding or removing instances of your
-webapp. But you dont want to update manually your haproxy configuration .In this article I will show you how you can build an highly scalable 
-environment for your webapps using docker containers, but you should be able to use it the sameway on vm's.
+webapp. But you dont want to update manually your loadbalancer configuration. In this article I will show you how you can build an highly scalable 
+environment for your webapps using docker containers, but you should be able to use it the same way on vm's.
 
 ##Tooling##
 
@@ -26,6 +26,11 @@ environment for your webapps using docker containers, but you should be able to 
 - Supervisord: As we run next to the primary process a consul application in the container we need something to launch them
 
 Of the list above you only need to install the docker toolbox. You a can find it at the docker [website](https://www.docker.com/docker-toolbox)
+
+Overview
+In the image below you can see how the environment will be setup. As you can see I use three different parts of consul.
+
+![container overview](/images/2015-12-01-scaling-your-dockerized-webapplication/overview.png){:width="600px"}
 
 ##Docker containers##
 As mentioned before I am using docker containers in this setup. Three different containers can be identified:
@@ -90,6 +95,18 @@ COPY web.json /etc/consul.d/web.json
 CMD ["/usr/bin/supervisord"]
 {% endhighlight %}
 
+####web.json
+{% highlight json linenos %}
+{
+	"service": {
+		"name": "web",
+		"tags": ["php"],
+		"port": 80
+	},
+	"leave_on_terminate": true
+}
+{% endhighlight %}
+
 ####supervisord.conf
 {% highlight ini linenos %}
 [supervisord]
@@ -102,17 +119,15 @@ command=/usr/local/bin/apache2-foreground
 command=consul agent -data-dir=/tmp/consul -join consul -config-dir /etc/consul.d
 {% endhighlight %}
 
-####web.json
-{% highlight json linenos %}
-{
-	"service": {
-		"name": "web",
-		"tags": ["php"],
-		"port": 80
-	},
-	"leave_on_terminate": true
-}
-{% endhighlight %}
+###Load balancer
+
+####Dockerfile
+
+####haproxy.cfg/ctml
+
+####haproxy.json
+
+####supervisord.conf
 
 All the containers are listed in the docker-compose.yml. This file is used by docker-compose to run the multi-container environment.
 
