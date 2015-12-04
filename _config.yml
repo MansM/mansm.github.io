@@ -6,10 +6,10 @@
 # 'jekyll serve'. If you change this file, please restart the server process.
 
 # Site settings
-title: MansM tech talks
+title: MansM tech babble
 email: cybermans@gmail.com
 description: > # this means to ignore newlines until "baseurl:"
-  My technology gibberish
+  My journey through technoglogy
 baseurl: "" # the subpath of your site, e.g. /blog
 url: "http://mans.github.io" # the base hostname & protocol for your site
 twitter_username: Mans_M

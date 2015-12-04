@@ -4,12 +4,15 @@ title: About
 permalink: /about/
 ---
 
-This is the base Jekyll theme. You can find out more info about customizing your Jekyll theme, as well as basic Jekyll usage documentation at [jekyllrb.com](http://jekyllrb.com/)
+Hi,
 
-You can find the source code for the Jekyll new theme at:
-{% include icon-github.html username="jglovier" %} /
-[jekyll-new](https://github.com/jglovier/jekyll-new)
+Weclome to my blog about technology. Most of what I here share will be proof of concept style items.
+I really enjoy to make cool small things that can scale BIG. 
+My current technology interests are about tooling like:
 
-You can find the source code for Jekyll at
-{% include icon-github.html username="jekyll" %} /
-[jekyll](https://github.com/jekyll/jekyll)
+* Puppet
+* Docker
+* Vagrant
+* Consul
+
+if you have ideas please drop a line and maybe we can make something cool

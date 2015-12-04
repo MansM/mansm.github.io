@@ -18,9 +18,9 @@ webapp. But you dont want to update manually your loadbalancer configuration. In
 environment for your webapps using docker containers, but you should be able to use it the same way on vm's.
 
 ##Tooling
-
 - Docker: In the current IT environment there is never enough speed, VM's are slow and containers are hot. Docker is currently the most popular 
 container software.
+- Docker-compose: tool for defining and launching multi-container applications.
 - Haproxy: Opensource load balancer for TCP and HTTP based services
 - Consul: A tool for service discovery and configuration
 - Apache with php: Just an example of an webapplication, but you can use any other webapplication type
@@ -29,7 +29,6 @@ container software.
 Of the list above you only need to install the docker toolbox. You can find it at the docker [website](https://www.docker.com/docker-toolbox)
 
 ##Overview
-
 In the image below you can see how the environment will be. As you can see I use three different parts of consul. The agent, the server and template. 
 The agent tells the server it is online and which services the machine/container has available. Consul template queries the server and replaces the 
 configuration file of haproxy which it also notifies. On shutting down a webserver the consul agent notifies the server it is leaving and consul template 
@@ -139,28 +138,23 @@ docker run --rm -p 80:80 -p 9000:9000 --link="consul" --link="web" --name loadba
 The load balancer exists of two main components: consul template and haproxy. I have chosen haproxy in this setup so I can switch to non http backends as well.
 
 ####Dockerfile
-The Dockerfile of the loadbalancer consists of installing the software (line 7 & 8) and copying configuration files into the image (line 13-15).
+The Dockerfile of the loadbalancer consists of installing the software (line 5 & 6) and copying configuration files into the image (line 9 & 10).
 {% highlight docker linenos %}
 FROM debian:latest
-
 MAINTAINER Mans Matulewicz
-
 ENV CONSUL_TEMPLATE_VERSION=0.10.0
 
-RUN apt-get update && apt-get install -y haproxy wget unzip supervisor
+RUN apt-get update && apt-get install -y haproxy wget unzip
 RUN ( wget --no-check-certificate https://github.com/hashicorp/consul-template/releases/download/v${CONSUL_TEMPLATE_VERSION}/consul-template_${CONSUL_TEMPLATE_VERSION}_linux_amd64.tar.gz -O /tmp/consul_template.tar.gz && gunzip /tmp/consul_template.tar.gz && cd /tmp && tar xf /tmp/consul_template.tar && cd /tmp/consul-template* && mv consul-template /usr/bin && rm -rf /tmp/* )
 RUN apt-get clean
 
-RUN mkdir -p /var/log/supervisor
-
-COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 COPY haproxy.ctmpl /etc/haproxy.ctmpl
 COPY haproxy.json /etc/haproxy.json
 
 EXPOSE 80/tcp 9000/tcp
-CMD ["/usr/bin/supervisord"]
+CMD ["consul-template", "-config=/etc/haproxy.json", "-consul=consul:8500"]
 {% endhighlight %}
-####haproxy.cfg/ctml
+####haproxy.ctmpl
 Below is only a part of the haproxy config, the part that is modified by consul-template. At line 7 the loop starts for every node that delivers the service web and it will create 
 a line for every available server. The check what is normally found at the end of the haproxy config for every node is not used, this because we only have working nodes available.
 {% highlight nginx linenos %}
@@ -184,22 +178,54 @@ template {
   command = "haproxy -f /etc/haproxy/haproxy.cfg -sf $(pidof haproxy) &"
 }
 {% endhighlight %}
-####supervisord.conf
-{% highlight ini linenos %}
-[supervisord]
-nodaemon=true
-
-[program:consultemplate]
-command=consul-template -config=/etc/haproxy.json -consul=consul:8500
-{% endhighlight %}
 
 ##Docker-compose
-All the containers are listed in the docker-compose.yml. This file is used by docker-compose to run the multi-container environment.
+Until now we have started all the containers one by one, but there is an more easy way todo it. We will using docker-compose, it is shipped with the docker toolbox. 
+Before we can use it we have to make sure all the manually started containers are gone, otherwise you will get conflicts with ports. Below you can see the the running containers and 
+the command to stop them.
+{% highlight javascript bash %}
+Manss-MacBook-Air:~ Mans$ docker ps
+CONTAINER ID        IMAGE                      COMMAND                  CREATED             STATUS              PORTS                                                                                NAMES
+c475f80693b9        loadbalancer               "consul-template -con"   3 seconds ago       Up 3 seconds        0.0.0.0:80->80/tcp, 0.0.0.0:9000->9000/tcp                                           loadbalancer
+ffd06220716f        apachephp                  "/usr/bin/supervisord"   17 seconds ago      Up 17 seconds       0.0.0.0:8080->80/tcp                                                                 web
+16df4e7a5e64        gliderlabs/consul-server   "/bin/consul agent -s"   29 seconds ago      Up 28 seconds       8300-8302/tcp, 8400/tcp, 8301-8302/udp, 8600/tcp, 8600/udp, 0.0.0.0:8500->8500/tcp   consul
+Manss-MacBook-Air:~ Mans$ docker stop loadbalancer web consul
+loadbalancer
+web
+consul
+{% endhighlight %}
 
+To start all the containers of this project, use the command docker-compose up. It will start all the containers and show the logs.
+Now it's time for the stuff its all about: scaling!
+
+
+###docker-compose.yml
+All the magic of the docker-compose is configured in the docker-compose.yml listed below. In essence it is just listing all the containers and the runtime 
+parameters.
+{% highlight javascript yaml %}
+consul:
+  image: gliderlabs/consul-server
+  command: -bootstrap
+  ports:
+   - "8500:8500"
+loadbalancer:
+  build: haproxy
+  ports:
+   - "80:80"
+   - "9000:9000"
+  links:
+   - web
+   - consul
+web:
+  build: apachephp
+  links:
+    - consul
+{% endhighlight %}
 ##Conclusion
-In a later post I will add docker swarm to the mix so you can easily scale over multiple docker-machines.
+Creating an highly scalable environment is not hard as this blogpost will have shown you. It is usable for containers as well for virtual machines.
+In a later post I will add docker swarm to the mix and extend the functionality over multiple (docker-)machines.
 
-##Sources:##
+##Sources
 
 - http://sirile.github.io/2015/05/18/using-haproxy-and-consul-for-dynamic-service-discovery-on-docker.html
 - http://technologyconversations.com/2015/07/02/scaling-to-infinity-with-docker-swarm-docker-compose-and-consul-part-14-a-taste-of-what-is-to-come/
