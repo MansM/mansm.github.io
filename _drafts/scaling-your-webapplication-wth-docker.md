@@ -70,7 +70,7 @@ Now its time to add a webserver to the pool, first of all we need to build and r
 
 {% highlight bash %}
 docker build -t apachephp apachephp
-docker run  --rm --name web -p 80:80 --link="consul" apachephp
+docker run  --rm --name web -p 8080:80 --link="consul" apachephp
 {% endhighlight %}
 When you refresh the consul-ui screen, you will see the webserver has been added. 
 ![Consul ui with webserver](/images/2015-12-01-scaling-your-dockerized-webapplication/consul-ui-web.png)
@@ -116,7 +116,8 @@ makes the agent notify the server it is leaving when the containter is stopped. 
 {% endhighlight %}
 
 ####supervisord.conf
-In the configuration file for supervisord we mention that supervisord shouldnt be started as a deamon. This will make the output be shown directly
+In the configuration file for supervisord we mention that supervisord shouldnt be started as a deamon. This will make the output be shown directly (and retrievable
+with docker logs).
 {% highlight ini linenos %}
 [supervisord]
 nodaemon=true
@@ -129,12 +130,16 @@ command=consul agent -data-dir=/tmp/consul -join consul -config-dir /etc/consul.
 {% endhighlight %}
 
 ###Load balancer
-The final container in the setup is the load balancer. 
+The final container in the setup is the load balancer. You can start it with the following commands:
 {% highlight bash linenos %}
 docker build -t loadbalancer haproxy
 docker run --rm -p 80:80 -p 9000:9000 --link="consul" --link="web" --name loadbalancer loadbalancer
 {% endhighlight %}
+
+The load balancer exists of two main components: consul template and haproxy. I have chosen haproxy in this setup so I can switch to non http backends as well.
+
 ####Dockerfile
+The Dockerfile of the loadbalancer consists of installing the software (line 7 & 8) and copying configuration files into the image (line 13-15).
 {% highlight docker linenos %}
 FROM debian:latest
 
@@ -156,6 +161,8 @@ EXPOSE 80/tcp 9000/tcp
 CMD ["/usr/bin/supervisord"]
 {% endhighlight %}
 ####haproxy.cfg/ctml
+Below is only a part of the haproxy config, the part that is modified by consul-template. At line 7 the loop starts for every node that delivers the service web and it will create 
+a line for every available server. The check what is normally found at the end of the haproxy config for every node is not used, this because we only have working nodes available.
 {% highlight nginx linenos %}
 {% raw %}
 backend nodes
@@ -168,6 +175,8 @@ backend nodes
     server {{.Node}} {{.Address}}:{{.Port}}{{end}}{% endraw %}
 {% endhighlight %}
 ####haproxy.json
+This is the configuration for consul template. Using the source template file, it will generate the destination configuration file and will invoke haproxy with the newly created
+configuration file
 {% highlight javascript linenos %}
 template {
   source = "/etc/haproxy.ctmpl"
@@ -183,9 +192,12 @@ nodaemon=true
 [program:consultemplate]
 command=consul-template -config=/etc/haproxy.json -consul=consul:8500
 {% endhighlight %}
-All the containers are listed in the docker-compose.yml. This file is used by docker-compose to run the multi-container environment.
 
 ##Docker-compose
+All the containers are listed in the docker-compose.yml. This file is used by docker-compose to run the multi-container environment.
+
+##Conclusion
+In a later post I will add docker swarm to the mix so you can easily scale over multiple docker-machines.
 
 ##Sources:##
 
