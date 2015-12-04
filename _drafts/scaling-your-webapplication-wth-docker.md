@@ -136,6 +136,8 @@ docker run --rm -p 80:80 -p 9000:9000 --link="consul" --link="web" --name loadba
 {% endhighlight %}
 
 The load balancer exists of two main components: consul template and haproxy. I have chosen haproxy in this setup so I can switch to non http backends as well.
+In your browser go to docker_ip:9000/haproxy_stats (User/Pass: admin) to see the statistics page of haproxy, which shows 1 backend webserver.
+![haproxy](/images/2015-12-01-scaling-your-dockerized-webapplication/haproxy.png)
 
 ####Dockerfile
 The Dockerfile of the loadbalancer consists of installing the software (line 5 & 6) and copying configuration files into the image (line 9 & 10).
@@ -196,8 +198,17 @@ consul
 {% endhighlight %}
 
 To start all the containers of this project, use the command docker-compose up. It will start all the containers and show the logs.
-Now it's time for the stuff its all about: scaling!
-
+Now it's time for the stuff its all about: scaling! To increase the amount of webservers to 5, you just have to give this command:
+{% highlight javascript bash %}
+Manss-MacBook-Air:scalingdemo Mans$ docker-compose scale web=5
+Creating and starting 2 ... done
+Creating and starting 3 ... done
+Creating and starting 4 ... done
+Creating and starting 5 ... done
+{% endhighlight %}
+Within a couple of seconds you are now running your webapplication on 5 webservers: 
+![Consul ui upscaled](/images/2015-12-01-scaling-your-dockerized-webapplication/consul-ui-upscaled.png)
+![haproxy upscaled](/images/2015-12-01-scaling-your-dockerized-webapplication/haproxy-upscaled.png)
 
 ###docker-compose.yml
 All the magic of the docker-compose is configured in the docker-compose.yml listed below. In essence it is just listing all the containers and the runtime 
