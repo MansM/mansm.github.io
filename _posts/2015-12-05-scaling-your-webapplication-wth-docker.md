@@ -22,7 +22,7 @@ can build an highly scalable environment for your webapps using Docker container
 {:toc}
 </div>
 
-[Docker](https://www.docker.com/) is an open source tool for builing and running containers. Containers are an all-in-one package filled the application and its dependencies.
+[Docker](https://www.docker.com/) is an open source tool for building and running containers. Containers are an all-in-one package filled with the application and its dependencies.
 The benefit of using containers is that it runs directly on the operating system, which saves you from a virtualization-layer. Every container runs
 seperately, so your environment will be multi-tennnant safe.
 
@@ -33,15 +33,15 @@ container software.
 - Haproxy: Open source load balancer for TCP and HTTP based services
 - Consul: A tool for service discovery and configuration
 - Apache with php: Just an example of an webapplication, but you can use any other webapplication type
-- Supervisord: As we run next to the primary process a consul application in the container we need something to launch them
+- Supervisor: As we run next to the primary process a Consul application in the container we need something to launch them
 
 Of the list above you only need to install the Docker toolbox. You can find it at the Docker [website](https://www.docker.com/docker-toolbox). Make sure you 
 have the docker "default" virtual machine created by opening Docker Kitematic or use docker-machine create to create
 
 ##Overview
-In the image below you can see how the environment will be. As you can see I use three different parts of consul. The agent, the server and template. 
-The agent tells the server it is online and which services the machine/container has available. Consul template queries the server and replaces the 
-configuration file of haproxy which it also notifies. On shutting down a webserver the consul agent notifies the server it is leaving and consul template 
+In the image below you can see how the environment will be. As you can see I use three different parts of consul: the agent, the server and template. 
+The agent tells the server it is online and which services the machine/container has available. Consul-template queries the server and replaces the 
+configuration file of Haproxy which it also notifies. On shutting down a webserver the Consul agent notifies the server it is leaving and Consul-template 
 will remove the server from the configuration file. 
 
 ![container overview](/images/2015-12-01-scaling-your-dockerized-webapplication/overview.png)
@@ -58,38 +58,49 @@ First of all, get the git repository with the example code:
 git clone https://github.com/MansM/docker-scalingdemo.git
 {% endhighlight %}
 
+##How to start docker
+git bash gebruiken (vanwege shift+insert wel werken)
+docker-machine create default
+env "$(docker-machine env default)"
+voor elke nieuwe terminal/command line moet je dit doen
+en in de juiste map staan
+
+
 ###Consul server
-Change to the folder in your terminal or windows commandline. The consul server is the consul-server container made by gliderlabs, to start it:
+Change to the folder in your terminal or Windows commandline. The Consul server is the Consul-server container made by Gliderlabs, to start it:
 
 {% highlight bash %}
 docker run --rm --name consul -p 8500:8500 gliderlabs/consul-server -bootstrap
 {% endhighlight %}
 
-to view the consul server ui, you can browse to the Docker_ip:8500, you can locate the ip with running the command:
+To view the consul server ui, you can browse to the docker_ip:8500, you can locate the ip with running the command:
 {% highlight bash %}
 docker-machine ip default 
 {% endhighlight %}
-(if it default is not the correct Docker-machine, find the correct one with Docker-machine ls)
+If default is not the correct Docker-machine, find the correct one with "docker-machine ls".
 
 You should now see something like:
-![Consul ui](/images/2015-12-01-scaling-your-dockerized-webapplication/consul-ui.png)
+![Consul UI](/images/2015-12-01-scaling-your-dockerized-webapplication/consul-ui.png)
 
 ###Web application
-Now its time to add a webserver to the pool, first of all we need to build and run the Docker container
+Now it is time to add a webserver to the pool. First of all we need to build and run the Docker container:
 
 {% highlight bash %}
 docker build -t apachephp apachephp
 docker run  --rm --name web -p 8080:80 --link="consul" apachephp
 {% endhighlight %}
-When you refresh the consul-ui screen, you will see the webserver has been added. 
-![Consul ui with webserver](/images/2015-12-01-scaling-your-dockerized-webapplication/consul-ui-web.png)
+When you refresh the Consul UI screen, you will see the webserver has been added. 
+![Consul UI with webserver](/images/2015-12-01-scaling-your-dockerized-webapplication/consul-ui-web.png)
+
+TODO: link uitleggen
+TODO: 
 
 ####Dockerfile
 The main item of any Docker container is the Dockerfile, this contains the building steps from which Docker builds the image.
-In this case we are using as base image the image from php including apache (line 1). On line 4 we install supervisord and two
-utilities to get the rest of the Dockerfile working. The consul agent is downloaded and installed on line 9. The configuration for 
-supervisord and consul is copied into the image on 12 and 13. The last line is the command that is executed on launching the container, 
-here it is starting supervisord to launch the other processes.
+In this case the base image we are using is the image php including apache (line 1). On line 4 we install Supervisor and two
+utilities to get the rest of the Dockerfile working. The Consul agent is downloaded and installed on line 9. The configuration for 
+Supervisor and Consul is copied into the image on line 12 and 13. The last line is the command which will be executed on launching the container, 
+in this case starting Supervisor to launch the other processes.
 
 {% highlight docker linenos %}
 FROM php:5.6-apache
@@ -111,8 +122,8 @@ CMD ["/usr/bin/supervisord"]
 
 
 ####web.json
-This file is the configuration or the consul agent. The service web is the selector which later will be used to identify the needed containers. Line 7 is quite important, it
-makes the agent notify the server it is leaving when the containter is stopped. This will save you from deregistering every stopped node in the consul ui.
+This file is the configuration for the Consul agent. The service web is the selector which later will be used to identify the needed containers. Line 7 is quite important, it
+makes the agent notify the server it is leaving when the containter is stopped. This will save you from deregistering every stopped node in the Consul UI.
 {% highlight json linenos %}
 {
   "service": {
@@ -125,8 +136,8 @@ makes the agent notify the server it is leaving when the containter is stopped. 
 {% endhighlight %}
 
 ####supervisord.conf
-In the configuration file for supervisord we mention that supervisord shouldnt be started as a deamon. This will make the output be shown directly (and retrievable
-with Docker logs).
+In the configuration file for Supervisor we mention that Supervisor should not be started as a daemon. The output will now be shown directly instead of being written to 
+log files (and retrievable with "docker logs").
 {% highlight ini linenos %}
 [supervisord]
 nodaemon=true
@@ -140,13 +151,13 @@ command=consul agent -data-dir=/tmp/consul -join consul -config-dir /etc/consul.
 
 ###Load balancer
 The final container in the setup is the load balancer. You can start it with the following commands:
-{% highlight bash linenos %}
-Docker build -t loadbalancer haproxy
-Docker run --rm -p 80:80 -p 9000:9000 --link="consul" --link="web" --name loadbalancer loadbalancer
+{% highlight bash %}
+docker build -t loadbalancer haproxy
+docker run --rm -p 80:80 -p 9000:9000 --link="consul" --link="web" --name loadbalancer loadbalancer
 {% endhighlight %}
 
-The load balancer exists of two main components: consul template and haproxy. I have chosen haproxy in this setup so I can switch to non http backends as well.
-In your browser go to Docker_ip:9000/haproxy_stats (User/Pass: admin) to see the statistics page of haproxy, which shows 1 backend webserver.
+The load balancer exists of two main components: Consul-template and Haproxy. I have chosen Haproxy in this setup so I can switch to non HTTP backends as well.
+In your browser go to docker_ip:9000/haproxy_stats (User/Pass: admin) to see the statistics page of Haproxy, which shows a single backend webserver.
 ![haproxy](/images/2015-12-01-scaling-your-dockerized-webapplication/haproxy.png)
 
 ####Dockerfile
@@ -167,8 +178,9 @@ EXPOSE 80/tcp 9000/tcp
 CMD ["consul-template", "-config=/etc/haproxy.json", "-consul=consul:8500"]
 {% endhighlight %}
 ####haproxy.ctmpl
-Below is only a part of the haproxy config, the part that is modified by consul-template. At line 7 the loop starts for every node that delivers the service web and it will create 
-a line for every available server. The check what is normally found at the end of the haproxy config for every node is not used, this because we only have working nodes available.
+Below is only a part of the Haproxy configuration file, the part that is modified by Consul-template. At line 7 the loop starts for every node that delivers the service web 
+and it will create a line for every available server. Usually the word 'check' is placed at the end of every sever-line to make Haproxy check for the availability of the server, 
+however this is not necessary in this setup.
 {% highlight nginx linenos %}
 {% raw %}
 backend nodes
@@ -181,8 +193,8 @@ backend nodes
     server {{.Node}} {{.Address}}:{{.Port}}{{end}}{% endraw %}
 {% endhighlight %}
 ####haproxy.json
-This is the configuration for consul template. Using the source template file, it will generate the destination configuration file and will invoke haproxy with the newly created
-configuration file
+This is the configuration file for Consul-template. Using the source template file, it will generate the destination configuration file and will invoke Haproxy with the newly created
+configuration file.
 {% highlight javascript linenos %}
 template {
   source = "/etc/haproxy.ctmpl"
@@ -192,22 +204,26 @@ template {
 {% endhighlight %}
 
 ##Docker-compose
-Until now we have started all the containers one by one, but there is an more easy way todo it. We will using Docker-compose, it is shipped with the Docker toolbox. 
-Before we can use it we have to make sure all the manually started containers are gone, otherwise you will get conflicts with ports. Below you can see the the running containers and 
-the command to stop them.
-{% highlight javascript bash %}
-Manss-MacBook-Air:~ Mans$ Docker ps
+Until now we have started all the containers one by one, but there is a more easy way todo it. We will using Docker-compose, it is shipped with the Docker toolbox. 
+Before we can use it, we have to make sure all the manually started containers are gone, otherwise you will get conflicts with ports. Below you can see the the running containers:
+{% highlight bash %}
+Manss-MacBook-Air:~ Mans$ docker ps
 CONTAINER ID        IMAGE                      COMMAND                  CREATED             STATUS              PORTS                                                                                NAMES
 c475f80693b9        loadbalancer               "consul-template -con"   3 seconds ago       Up 3 seconds        0.0.0.0:80->80/tcp, 0.0.0.0:9000->9000/tcp                                           loadbalancer
 ffd06220716f        apachephp                  "/usr/bin/supervisord"   17 seconds ago      Up 17 seconds       0.0.0.0:8080->80/tcp                                                                 web
 16df4e7a5e64        gliderlabs/consul-server   "/bin/consul agent -s"   29 seconds ago      Up 28 seconds       8300-8302/tcp, 8400/tcp, 8301-8302/udp, 8600/tcp, 8600/udp, 0.0.0.0:8500->8500/tcp   consul
-Manss-MacBook-Air:~ Mans$ Docker stop loadbalancer web consul
-loadbalancer
-web
 consul
 {% endhighlight %}
 
-To start all the containers of this project, use the command Docker-compose up. It will start all the containers and show the logs.
+to stop them use the following command:
+{% highlight bash %}
+docker stop loadbalancer web consul
+{% endhighlight %}
+
+To start all the containers of this project, use the command 
+{% highlight bash %}
+"docker-compose up"
+{% endhighlight %} It will start all the containers and show the logs.
 Now it's time for the stuff its all about: scaling! To increase the amount of webservers to 5, you just have to give this command:
 {% highlight javascript bash %}
 Manss-MacBook-Air:scalingdemo Mans$ Docker-compose scale web=5
