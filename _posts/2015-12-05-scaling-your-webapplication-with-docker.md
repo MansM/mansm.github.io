@@ -215,8 +215,8 @@ With the information above I have shown you how Docker works and how you can man
 how you can simplify this and finally we get to scaling.
 
 ##Docker Compose
-Until now we have started all the containers one by one, but there is a more easy way todo it. We will using Compose, which is shipped with the Docker Toolbox. 
-Before we can use it, we have to make sure all the manually started containers are gone, to prevents conflicts with ports. Below you can see the the running containers:
+Until now we have started all the containers one by one, but there is a more easy way to do it. We will using Compose, which is shipped with the Docker Toolbox. 
+Before we can use it, we have to make sure all the manually started containers are gone, to prevents conflicts with ports. Below you can see the running containers:
 {% highlight bash %}
 Manss-MacBook-Air:~ Mans$ docker ps
 CONTAINER ID        IMAGE                      COMMAND                  CREATED             STATUS              PORTS                                                                                NAMES
@@ -230,12 +230,13 @@ To stop them use the following command:
 docker stop loadbalancer web consul
 {% endhighlight %}
 
-To start all the containers of this project, use the command 
+To start all the containers of this project, use the command:
 {% highlight bash %}
 docker-compose up
 {% endhighlight %} 
 
 It will start all the containers and show the logging output in the terminal/command line.
+
 Now it's time for the stuff its all about: scaling! To increase the amount of web servers to 5, you just have to give this command:
 {% highlight javascript bash %}
 Manss-MacBook-Air:scalingdemo Mans$ docker-compose scale web=5
