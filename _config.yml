@@ -9,7 +9,7 @@
 title: MansM tech babble
 email: cybermans@gmail.com
 description: > # this means to ignore newlines until "baseurl:"
-  My journey through technoglogy
+  My journey through technology
 baseurl: "" # the subpath of your site, e.g. /blog
 url: "http://mans.github.io" # the base hostname & protocol for your site
 twitter_username: Mans_M
