@@ -187,7 +187,7 @@ CMD ["consul-template", "-config=/etc/haproxy.json", "-consul=consul:8500"]
 
 ####haproxy.ctmpl
 Below is only a part of the Haproxy configuration file, the part that is modified by Consul-template. At line 7 the loop starts for every node that delivers the service web 
-and it will create a line for every available server. Usually the word 'check' is placed at the end of every sever-line to make Haproxy check for the availability of the server, 
+and it will create a line for every available server. Usually the word 'check' is placed at the end of every server-line to make Haproxy check for the availability of the server, 
 however this is not necessary in this setup.
 {% highlight nginx linenos %}
 {% raw %}
