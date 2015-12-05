@@ -44,7 +44,7 @@ The agent tells the server it is online and which services the machine/container
 configuration file of Haproxy which it also notifies. On shutting down a webserver the Consul agent notifies the server it is leaving and Consul-template 
 will remove the server from the configuration file. 
 
-![Container overview](/images/2015-12-01-scaling-your-dockerized-webapplication/overview.png)
+![Container overview](/images/2015-12-05-scaling-your-webapplication-with-docker/overview.png)
 
 ##How to start Docker
 *For Windows users:
@@ -88,7 +88,7 @@ docker-machine ip default
 If 'default' is not the correct Docker-machine, find the correct one with "docker-machine ls".
 
 You should now see something like:
-![Consul UI](/images/2015-12-01-scaling-your-dockerized-webapplication/consul-ui.png)
+![Consul UI](/images/2015-12-05-scaling-your-webapplication-with-docker/consul-ui.png)
 
 ###Web application
 Now it's time to add a webserver to the pool. First of all we need to build and run the Docker container:
@@ -98,7 +98,7 @@ docker build -t apachephp apachephp
 docker run  --rm --name web -p 8080:80 --link="consul" apachephp
 {% endhighlight %}
 When you refresh the Consul UI screen, you will see the web server has been added. 
-![Consul UI with webserver](/images/2015-12-01-scaling-your-dockerized-webapplication/consul-ui-web.png)
+![Consul UI with webserver](/images/2015-12-05-scaling-your-webapplication-with-docker/consul-ui-web.png)
 
 In the command to start the web server I have used the option 'link'. Setting this parameter Docker will link the mentioned container to the new container.
 
@@ -165,7 +165,7 @@ docker run --rm -p 80:80 -p 9000:9000 --link="consul" --link="web" --name loadba
 
 The load balancer exists of two main components: Consul-template and Haproxy. I have chosen Haproxy in this setup so I can switch to non-HTTP backends as well.
 In your browser go to docker_ip:9000/haproxy_stats (User/Pass: admin) to see the statistics page of Haproxy, which shows a single backend webserver.
-![Haproxy](/images/2015-12-01-scaling-your-dockerized-webapplication/haproxy.png)
+![Haproxy](/images/2015-12-05-scaling-your-webapplication-with-docker/haproxy.png)
 
 ####Dockerfile
 The Dockerfile of the load balancer consists of installing the software (line 5 & 6) and copying configuration files into the image (line 9 & 10).
@@ -245,8 +245,8 @@ Creating and starting 4 ... done
 Creating and starting 5 ... done
 {% endhighlight %}
 Within a couple of seconds you are now running your web application on 5 webservers: 
-![Consul UI upscaled](/images/2015-12-01-scaling-your-dockerized-webapplication/consul-ui-upscaled.png)
-![Haproxy upscaled](/images/2015-12-01-scaling-your-dockerized-webapplication/haproxy-upscaled.png)
+![Consul UI upscaled](/images/2015-12-05-scaling-your-webapplication-with-docker/consul-ui-upscaled.png)
+![Haproxy upscaled](/images/2015-12-05-scaling-your-webapplication-with-docker/haproxy-upscaled.png)
 
 ###docker-compose.yml
 All the magic of Compose is configured in the docker-compose.yml listed below. In essence it is just listing all the containers and the runtime 
