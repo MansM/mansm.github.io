@@ -212,7 +212,6 @@ CONTAINER ID        IMAGE                      COMMAND                  CREATED 
 c475f80693b9        loadbalancer               "consul-template -con"   3 seconds ago       Up 3 seconds        0.0.0.0:80->80/tcp, 0.0.0.0:9000->9000/tcp                                           loadbalancer
 ffd06220716f        apachephp                  "/usr/bin/supervisord"   17 seconds ago      Up 17 seconds       0.0.0.0:8080->80/tcp                                                                 web
 16df4e7a5e64        gliderlabs/consul-server   "/bin/consul agent -s"   29 seconds ago      Up 28 seconds       8300-8302/tcp, 8400/tcp, 8301-8302/udp, 8600/tcp, 8600/udp, 0.0.0.0:8500->8500/tcp   consul
-consul
 {% endhighlight %}
 
 to stop them use the following command:
