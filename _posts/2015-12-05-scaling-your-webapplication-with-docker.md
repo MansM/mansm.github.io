@@ -36,7 +36,7 @@ container software.
 - Supervisor: As we run next to the primary process a Consul application in the container we need something to launch them
 
 Of the list above you only need to install the Docker toolbox. You can find it at the Docker [website](https://www.docker.com/docker-toolbox). Make sure you 
-have the docker "default" virtual machine created by opening Docker Kitematic or use docker-machine create to create
+have the docker "default" virtual machine created by opening Docker Kitematic or use 'docker-machine create' to create it.
 
 ##Overview
 In the image below you can see how the environment will be. As you can see I use three different parts of consul: the agent, the server and template. 
