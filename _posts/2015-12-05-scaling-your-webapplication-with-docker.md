@@ -41,7 +41,7 @@ have the docker "default" virtual machine created by opening Docker Kitematic or
 ##Overview
 In the image below you can see how the environment will be. As you can see I use three different parts of consul: the agent, the server and template. 
 The agent tells the server it is online and which services the machine/container has available. Consul-template queries the server and replaces the 
-configuration file of Haproxy which it also notifies. On shutting down a webserver the Consul agent notifies the server it is leaving and Consul-template 
+configuration file of Haproxy which it also restarts. On shutting down a webserver the Consul agent notifies the server it is leaving and Consul-template 
 will remove the server from the configuration file. 
 
 ![Container overview](/images/2015-12-05-scaling-your-webapplication-with-docker/overview.png)
