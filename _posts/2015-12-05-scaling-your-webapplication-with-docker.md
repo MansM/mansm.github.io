@@ -23,8 +23,8 @@ can build an highly scalable environment for your web apps using Docker containe
 </div>
 
 [Docker](https://www.docker.com/) is an open source tool for building and running containers. Containers are an all-in-one package filled with the application and its dependencies.
-The benefit of using containers is that it runs directly on the operating system, which saves you from a virtualization-layer. Every container runs
-separately, so your environment will be multi-tennnant safe.
+The benefit of using containers is that it runs directly on the operating system, which saves you from a virtualization layer. Every container runs
+separately, so your environment will be multi-tennant safe.
 
 ##Tooling
 - Docker: In the current IT environment there is never enough speed, VM's are slow and containers are hot. Docker is currently the most popular 
@@ -34,9 +34,11 @@ container software.
 - Consul: A tool for service discovery and configuration
 - Apache with PHP: Just an example of an web application, but you can use any other web application type
 - Supervisor: As we run next to the primary process a Consul application in the container we need something to launch them
+- Virtualbox: Free hypervisor, supplied with Docker toolbox
+- Git: version control system for sourcecode
 
 Of the list above you only need to install the Docker toolbox. You can find it at the Docker [website](https://www.docker.com/docker-toolbox). Make sure you 
-have the docker "default" virtual machine created by opening Docker Kitematic or use 'docker-machine create' to create it.
+have the docker "default" virtual machine created by opening Docker Kitematic (container monitor shipped with Docker toolbox) or use 'docker-machine create' to create it.
 
 ##Overview
 In the image below you can see how the environment will be. As you can see I use three different parts of consul: the agent, the server and template. 
