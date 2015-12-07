@@ -29,13 +29,13 @@ separately, so your environment will be multi-tennant safe.
 ##Tooling
 - Docker: In the current IT environment there is never enough speed, VM's are slow and containers are hot. Docker is currently the most popular 
 container software.
-- Docker-compose: tool for defining and launching multi-container applications.
+- Docker-compose: Tool for defining and launching multi-container applications.
 - Haproxy: Open source load balancer for TCP and HTTP based services
 - Consul: A tool for service discovery and configuration
 - Apache with PHP: Just an example of a web application, but you can use any other web application type
 - Supervisor: As we run next to the primary process a Consul application in the container we need something to launch them
 - Virtualbox: Free hypervisor, supplied with Docker toolbox
-- Git: version control system for sourcecode
+- Git: Version control system for source code
 
 Of the list above you only need to install the Docker toolbox. You can find it at the Docker [website](https://www.docker.com/docker-toolbox). Make sure you 
 have the docker "default" virtual machine created by opening Docker Kitematic (container monitor shipped with Docker toolbox) or use 'docker-machine create' to create it.
