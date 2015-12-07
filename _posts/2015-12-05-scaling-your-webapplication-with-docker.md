@@ -32,7 +32,7 @@ container software.
 - Docker-compose: tool for defining and launching multi-container applications.
 - Haproxy: Open source load balancer for TCP and HTTP based services
 - Consul: A tool for service discovery and configuration
-- Apache with PHP: Just an example of an web application, but you can use any other web application type
+- Apache with PHP: Just an example of a web application, but you can use any other web application type
 - Supervisor: As we run next to the primary process a Consul application in the container we need something to launch them
 - Virtualbox: Free hypervisor, supplied with Docker toolbox
 - Git: version control system for sourcecode
