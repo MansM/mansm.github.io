@@ -80,7 +80,7 @@ git clone https://github.com/MansM/docker-scalingdemo.git
 Change to the folder in your terminal or Windows command line where the Git repository is located. The Consul server is the 'consul-server' container made by Gliderlabs, to start it:
 
 {% highlight bash %}
-docker run --rm --name consul -p 8500:8500 gliderlabs/consul-server -bootstrap
+docker run --rm --name consul -p 8500:8500 gliderlabs/consul-server -bootstrap-expect 1
 {% endhighlight %}
 
 To view the Consul server UI, you can browse to the docker_ip:8500, you can locate the IP with running the command:
@@ -257,7 +257,7 @@ parameters.
 {% highlight javascript yaml %}
 consul:
   image: gliderlabs/consul-server
-  command: -bootstrap
+  command: -bootstrap-expect 1
   ports:
    - "8500:8500"
 loadbalancer:
