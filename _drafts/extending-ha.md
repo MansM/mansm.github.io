@@ -34,9 +34,10 @@ Docker environments over multiple servers and/or datacenters using Nomad.**
 - Git: Version control system for source code
 - Virtualbox: Free hypervisor
 - Vagrant: Wrapper around virtualbox, which allows you to script vm provisioning
-- Webapp && haproxy: basic 2-tier application which is described in the previous post
+- Webapp & haproxy: basic 2-tier application which is described in the previous post
 
 ##Overview
+To create an high available environment we need to make sure all parts are redundant available. 
 
 NomadServer1
 Nomad Server
