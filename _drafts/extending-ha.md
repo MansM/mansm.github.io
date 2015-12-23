@@ -33,11 +33,18 @@ Docker environments over multiple servers and/or datacenters using Nomad.**
 - Ansible (version 2): platform for deploying software and configuration management
 - Git: Version control system for source code
 - Virtualbox: Free hypervisor
-- Vagrant: Wrapper around virtualbox, which allows you to script vm provisioning
+- Vagrant: Wrapper around virtualbox, which allows you to script vm provisioning. 
 - Webapp & haproxy: basic 2-tier application which is described in the previous post
+
+On your local machine you need to install vagrant, virtualbox and ansible. I can highly recommed using chocolatey on windows or brew on osx for
+installing the applications. Keep in mind you need to install version 2 of ansible (brew install --devel ansible), this because I use some functionality
+that is not available in version 1.x . 
 
 ##Overview
 To create an high available environment we need to make sure all parts are redundant available. 
+
+
+
 
 NomadServer1
 Nomad Server
