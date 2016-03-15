@@ -20,7 +20,7 @@ can build an highly scalable environment for your web apps using Docker containe
 <h4>Contents</h4>
 <ul>
 
-* toc
+* TOC
 {:toc}
 
 </ul>
