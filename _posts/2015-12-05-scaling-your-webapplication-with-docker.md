@@ -18,12 +18,10 @@ can build an highly scalable environment for your web apps using Docker containe
 {::options parse_block_html="true" /}
 <div class="toc">
 <h4>Contents</h4>
-<ul>
 
 * TOC
 {:toc}
 
-</ul>
 </div>
 
 [Docker](https://www.docker.com/) is an open source tool for building and running containers. Containers are an all-in-one package filled with the application and its dependencies.
