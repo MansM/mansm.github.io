@@ -20,4 +20,4 @@ github:
 
 # Build settings
 markdown: kramdown
-highlighter: rogue
+highlighter: rouge
