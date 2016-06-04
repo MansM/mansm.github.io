@@ -6,9 +6,160 @@
 </description>
     <link>http://www.mansm.io/</link>
     <atom:link href="http://www.mansm.io/feed.xml" rel="self" type="application/rss+xml"/>
-    <pubDate>Fri, 03 Jun 2016 14:50:14 +0000</pubDate>
-    <lastBuildDate>Fri, 03 Jun 2016 14:50:14 +0000</lastBuildDate>
+    <pubDate>Sat, 04 Jun 2016 14:50:16 +0000</pubDate>
+    <lastBuildDate>Sat, 04 Jun 2016 14:50:16 +0000</lastBuildDate>
     <generator>Jekyll v3.1.6</generator>
+    
+      <item>
+        <title>Starting fresh with Jenkins 2.0</title>
+        <description>&lt;p&gt;&lt;strong&gt;Now Jenkins 2 recently got released it was time for me to start using it. Just changing the tag number of the Docker image was not enough. 
+In this post I will describe what you need to do to get started.&lt;/strong&gt;&lt;/p&gt;
+
+&lt;div class=&quot;toc&quot;&gt;
+  &lt;h4&gt;Contents&lt;/h4&gt;
+
+&lt;ul id=&quot;markdown-toc&quot;&gt;
+  &lt;li&gt;&lt;a href=&quot;#tooling&quot; id=&quot;markdown-toc-tooling&quot;&gt;Tooling&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;#jenkins-2&quot; id=&quot;markdown-toc-jenkins-2&quot;&gt;Jenkins 2&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;#dockerfile&quot; id=&quot;markdown-toc-dockerfile&quot;&gt;Dockerfile&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;#jenkinsfile&quot; id=&quot;markdown-toc-jenkinsfile&quot;&gt;Jenkinsfile&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;/div&gt;
+
+&lt;h2 id=&quot;tooling&quot;&gt;Tooling&lt;/h2&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;Docker&lt;/li&gt;
+  &lt;li&gt;Text editor&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h2 id=&quot;jenkins-2&quot;&gt;Jenkins 2&lt;/h2&gt;
+&lt;p&gt;In Jenkins 2 one of the main new features is “Pipeline as code”. Your pipeline/build steps are now bundled with your code in your git/svn repo. 
+To have the buildsteps defined as code has some advantages, but for me the biggest one is as your project evolves your build steps will probably evolve as well. So when for some reason you need to go back in time (perhaps to fix a production issue) you will build with the steps that are required for that moment in time.
+The can configure the buildsteps in a file called “Jenkinsfile”.&lt;/p&gt;
+
+&lt;p&gt;In the example below I have added some of the items I use a lot myself. 
+The language in the script is Jenkins DSL, which is almost identical to groovy.&lt;/p&gt;
+
+&lt;h2 id=&quot;dockerfile&quot;&gt;Dockerfile&lt;/h2&gt;
+&lt;p&gt;As most Docker projects you need a Dockerfile. We are using the official &lt;a href=&quot;https://hub.docker.com/_/jenkins/&quot;&gt;Jenkins&lt;/a&gt; Dockerimage as a base (line 1).
+Jenkins relies heavily on plugins. To add plugins we use a &lt;a href=&quot;/images/plugins.txt&quot;&gt;file&lt;/a&gt; with all the required plugins. With the plugins file I use, Jenkins still wants to get some more… So don’t be alarmed when you see a message of this starting it the first time. To install the plugins during the build of the Docker image we copy the plugins.txt into the image (line 3) and use it as a source when executing the plugin installer (line 4).&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;
+  &lt;pre&gt;&lt;code class=&quot;language-ruby&quot; data-lang=&quot;ruby&quot;&gt;&lt;table style=&quot;border-spacing: 0&quot;&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td class=&quot;gutter gl&quot; style=&quot;text-align: right&quot;&gt;&lt;pre class=&quot;lineno&quot;&gt;1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;no&quot;&gt;FROM&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;jenkinsci&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;/&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;jenkins&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;2&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;7&lt;/span&gt;
+&lt;span class=&quot;c1&quot;&gt;#plugins&lt;/span&gt;
+&lt;span class=&quot;no&quot;&gt;COPY&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;plugins&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;txt&lt;/span&gt; &lt;span class=&quot;sr&quot;&gt;/usr/s&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;hare&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;/&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;jenkins&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;/&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;plugins&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;txt&lt;/span&gt;
+&lt;span class=&quot;no&quot;&gt;RUN&lt;/span&gt; &lt;span class=&quot;sr&quot;&gt;/usr/&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;local&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;/&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;bin&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;/&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;plugins&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;sh&lt;/span&gt; &lt;span class=&quot;sr&quot;&gt;/usr/s&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;hare&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;/&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;jenkins&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;/&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;plugins&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;txt&lt;/span&gt;
+
+&lt;span class=&quot;c1&quot;&gt;#config&lt;/span&gt;
+&lt;span class=&quot;no&quot;&gt;COPY&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;jobs&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;/&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;docker&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;-&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;webapp&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;xml&lt;/span&gt; &lt;span class=&quot;sr&quot;&gt;/usr/s&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;hare&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;/&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;jenkins&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;/&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;ref&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;/&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;jobs&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;/&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;docker&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;-&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;webapp&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;/&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;config&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;xml&lt;/span&gt;
+&lt;span class=&quot;no&quot;&gt;COPY&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;config&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;xml&lt;/span&gt; &lt;span class=&quot;sr&quot;&gt;/usr/s&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;hare&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;/&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;jenkins&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;/&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;ref&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;/&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;config&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;xml&lt;/span&gt;
+
+&lt;span class=&quot;no&quot;&gt;USER&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;root&lt;/span&gt;
+&lt;span class=&quot;c1&quot;&gt;#Adding Jenkins user to the correct groups&lt;/span&gt;
+&lt;span class=&quot;no&quot;&gt;RUN&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;usermod&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;-&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;a&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;-&lt;/span&gt;&lt;span class=&quot;no&quot;&gt;G&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;users&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;jenkins&lt;/span&gt;
+&lt;span class=&quot;no&quot;&gt;RUN&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;usermod&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;-&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;a&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;-&lt;/span&gt;&lt;span class=&quot;no&quot;&gt;G&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;100&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;jenkins&lt;/span&gt;
+
+&lt;span class=&quot;no&quot;&gt;USER&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;jenkins&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+&lt;/span&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/tbody&gt;&lt;/table&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;/figure&gt;
+
+&lt;h2 id=&quot;jenkinsfile&quot;&gt;Jenkinsfile&lt;/h2&gt;
+&lt;p&gt;The Jenkinsfile in here is just an example of what you can do. It is not really a working script as I would never use scripts called somescript.sh ;-) .&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;
+  &lt;pre&gt;&lt;code class=&quot;language-groovy&quot; data-lang=&quot;groovy&quot;&gt;&lt;table style=&quot;border-spacing: 0&quot;&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td class=&quot;gutter gl&quot; style=&quot;text-align: right&quot;&gt;&lt;pre class=&quot;lineno&quot;&gt;1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;n&quot;&gt;node&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;&#39;master&#39;&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;{&lt;/span&gt;
+  
+  &lt;span class=&quot;n&quot;&gt;stage&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;prepare&quot;&lt;/span&gt;
+  &lt;span class=&quot;n&quot;&gt;checkout&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;scm&lt;/span&gt;
+
+  &lt;span class=&quot;n&quot;&gt;stage&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;build&quot;&lt;/span&gt;
+  &lt;span class=&quot;n&quot;&gt;node&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;&#39;docker-buildslave-centos7&#39;&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;{&lt;/span&gt;
+    &lt;span class=&quot;n&quot;&gt;withCredentials&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;([[&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;$class&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;&#39;UsernamePasswordMultiBinding&#39;&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;nl&quot;&gt;credentialsId:&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;&#39;foo-credenitals&#39;&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;nl&quot;&gt;passwordVariable:&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;&#39;FOO_PASS&#39;&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;nl&quot;&gt;usernameVariable:&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;&#39;FOO_USER&#39;&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;]])&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;{&lt;/span&gt;
+      &lt;span class=&quot;n&quot;&gt;sh&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;sed -i &#39;s/CHANGEUSER/${env.FOO_USER}/g&#39; somescript.sh&quot;&lt;/span&gt;
+      &lt;span class=&quot;n&quot;&gt;sh&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;sed -i &#39;s/CHANGEPASS/${env.FOO_PASS}/g&#39; somescript.sh&quot;&lt;/span&gt;
+    &lt;span class=&quot;o&quot;&gt;}&lt;/span&gt;
+    &lt;span class=&quot;n&quot;&gt;sh&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;chmod +x somescript.sh&quot;&lt;/span&gt;
+    &lt;span class=&quot;n&quot;&gt;sh&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;./somescript.sh&quot;&lt;/span&gt;
+    &lt;span class=&quot;n&quot;&gt;stash&lt;/span&gt; &lt;span class=&quot;nl&quot;&gt;includes:&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;&#39;*.bin&#39;&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;nl&quot;&gt;name:&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;&#39;bins&#39;&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;nl&quot;&gt;useDefaultExcludes:&lt;/span&gt; &lt;span class=&quot;kc&quot;&gt;false&lt;/span&gt;
+  &lt;span class=&quot;o&quot;&gt;}&lt;/span&gt;
+
+  &lt;span class=&quot;n&quot;&gt;stage&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;test&quot;&lt;/span&gt;
+  &lt;span class=&quot;n&quot;&gt;node&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;&#39;docker-test-centos7&#39;&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;{&lt;/span&gt;
+    &lt;span class=&quot;n&quot;&gt;checkout&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;scm&lt;/span&gt;
+    &lt;span class=&quot;n&quot;&gt;unstash&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;bins&lt;/span&gt;
+    &lt;span class=&quot;n&quot;&gt;sh&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;./testscript.sh&quot;&lt;/span&gt;
+  &lt;span class=&quot;o&quot;&gt;}&lt;/span&gt;
+
+  &lt;span class=&quot;n&quot;&gt;stage&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;store&quot;&lt;/span&gt;
+  &lt;span class=&quot;n&quot;&gt;unstash&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;bins&lt;/span&gt;
+  &lt;span class=&quot;err&quot;&gt;#&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Upload&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;somewhere&lt;/span&gt;
+
+&lt;span class=&quot;o&quot;&gt;}&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+&lt;/span&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/tbody&gt;&lt;/table&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;/figure&gt;
+
+</description>
+        <pubDate>Wed, 27 Apr 2016 17:00:00 +0000</pubDate>
+        <link>http://www.mansm.io/docker/jenkins/jenkinsfile/2016/04/27/jenkins-2.0.html</link>
+        <guid isPermaLink="true">http://www.mansm.io/docker/jenkins/jenkinsfile/2016/04/27/jenkins-2.0.html</guid>
+        
+        <category>Docker</category>
+        
+        <category>Jenkins</category>
+        
+        <category>Jenkinsfile</category>
+        
+        
+        <category>Docker</category>
+        
+        <category>Jenkins</category>
+        
+        <category>Jenkinsfile</category>
+        
+      </item>
     
       <item>
         <title>Presentation about Nomad</title>
@@ -41,6 +192,131 @@
         <category>Hashicorp</category>
         
         <category>Meetup</category>
+        
+      </item>
+    
+      <item>
+        <title>Extending your HA over multiple machines</title>
+        <description>
+&lt;p&gt;&lt;strong&gt;In the last article we discussed how you can scale your webapplication with Docker. In this article I will show you how you can scale your
+Docker environments over multiple servers and/or datacenters using Nomad.This post will be a focussed on building infrastructure.&lt;/strong&gt;&lt;/p&gt;
+
+&lt;div class=&quot;toc&quot;&gt;
+  &lt;h4&gt;Contents&lt;/h4&gt;
+
+&lt;/div&gt;
+
+&lt;p&gt;##Tooling
+- Docker: Container management software
+- Nomad: A distributed, high available. datacenter-aware scheduler
+- Consul: A tool for service discovery and configuration
+- Ansible (version 2): platform for deploying software and configuration management
+- Git: Version control system for source code
+- Virtualbox: Free hypervisor
+- Vagrant: Wrapper around virtualbox, which allows you to script vm provisioning. 
+- Webapp &amp;amp; haproxy: basic 2-tier application which is described in the previous post&lt;/p&gt;
+
+&lt;p&gt;On your local machine you need to install vagrant, virtualbox and ansible. I can highly recommed using chocolatey on windows or brew on osx for
+installing the applications. Keep in mind you need to install version 2 of ansible (brew install –devel ansible), this because I need to use some 
+functionality that is not available in version 1.x .&lt;/p&gt;
+
+&lt;p&gt;##Overview
+To create an high available environment we need to make sure all parts are redundant available. This result in every server
+being available more then once. More servers will result in higher memmory usage. I have ran this setup with ease on my 8GB 2012 MacBook Air.
+In the image below the architecture of the solution is shown:&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/images/2016-01-scaling-your-docker-environment/overview.png&quot; alt=&quot;Servers overview&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;##Ansible
+I normally use puppet for my configuration management, but during this project I decided to use ansible. For a small environment ansible is very
+easy to use and gets the job done. As this is my first ever usage of ansible, I will probably have created some code that should be done 
+differently. Feel free to give feedback.&lt;/p&gt;
+
+&lt;p&gt;##Nomad
+As mentioned earlier, nomad is a scheduler. Nomad was designed with Docker in mind, but also allows you to run “system” jobs, by example docker-engine.&lt;/p&gt;
+
+&lt;p&gt;##Networking
+In most large enterprises a lot of applications are getting webbased. This results in the dockerized webapps be available on an routeable address.
+I used 10.50.x.x/16 so I have enough address space.&lt;/p&gt;
+
+&lt;p&gt;##Servers&lt;/p&gt;
+
+&lt;p&gt;###Nomadservers
+On the machines with the name nomadserver1 and nomadserver2 the following components will be installed and configured:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;consul&lt;/li&gt;
+  &lt;li&gt;bind&lt;/li&gt;
+  &lt;li&gt;nomad&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;All of this is done by ansible. In the playbook for this project, which is partly shown below, you can see the applications being
+setup by using roles.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;
+  &lt;pre&gt;&lt;code class=&quot;language-yaml&quot; data-lang=&quot;yaml&quot;&gt;&lt;table style=&quot;border-spacing: 0&quot;&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td class=&quot;gutter gl&quot; style=&quot;text-align: right&quot;&gt;&lt;pre class=&quot;lineno&quot;&gt;1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;pi&quot;&gt;-&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;hosts&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;nomadserver*&lt;/span&gt;
+  &lt;span class=&quot;s&quot;&gt;become&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;yes&lt;/span&gt;
+  &lt;span class=&quot;s&quot;&gt;vars&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt;
+   &lt;span class=&quot;pi&quot;&gt;-&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;consul_type&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;server&quot;&lt;/span&gt;
+  &lt;span class=&quot;s&quot;&gt;roles&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt;
+    &lt;span class=&quot;pi&quot;&gt;-&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;consul&lt;/span&gt;
+    &lt;span class=&quot;pi&quot;&gt;-&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;bind&lt;/span&gt;
+    &lt;span class=&quot;pi&quot;&gt;-&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;nomad&lt;/span&gt;
+
+&lt;span class=&quot;pi&quot;&gt;-&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;hosts&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;nomadserver2&lt;/span&gt;
+  &lt;span class=&quot;s&quot;&gt;become&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;yes&lt;/span&gt;
+  &lt;span class=&quot;s&quot;&gt;tasks&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt;
+    &lt;span class=&quot;pi&quot;&gt;-&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;name&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;consul cluster maken&lt;/span&gt;
+      &lt;span class=&quot;s&quot;&gt;command&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;/usr/bin/consul join&lt;/span&gt; 
+    &lt;span class=&quot;pi&quot;&gt;-&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;name&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;nomad cluster maken&lt;/span&gt;
+      &lt;span class=&quot;s&quot;&gt;environment&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt;
+        &lt;span class=&quot;s&quot;&gt;NOMAD_ADDR&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;http://:4646&quot;&lt;/span&gt;
+      &lt;span class=&quot;s&quot;&gt;shell&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;/usr/bin/nomad server-join&lt;/span&gt; &lt;span class=&quot;w&quot;&gt;
+&lt;/span&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/tbody&gt;&lt;/table&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;/figure&gt;
+
+&lt;p&gt;On the nomadservers the consul is running in server mode and form together a cluser. All the consul agents running in next to 
+“businessapplications” are running in client mode.&lt;/p&gt;
+
+&lt;p&gt;###Dockerservers&lt;/p&gt;
+</description>
+        <pubDate>Thu, 31 Dec 2015 17:00:00 +0000</pubDate>
+        <link>http://www.mansm.io/docker/consul/nomad/ansible/2015/12/31/extending-ha.html</link>
+        <guid isPermaLink="true">http://www.mansm.io/docker/consul/nomad/ansible/2015/12/31/extending-ha.html</guid>
+        
+        <category>Docker</category>
+        
+        <category>consul</category>
+        
+        <category>nomad</category>
+        
+        <category>ansible</category>
+        
+        
+        <category>Docker</category>
+        
+        <category>consul</category>
+        
+        <category>nomad</category>
+        
+        <category>ansible</category>
         
       </item>
     
@@ -142,20 +418,20 @@ On starting the terminal/command line you will have to direct to the location of
 &lt;p&gt;First of all, get the Git repository with the example code:&lt;/p&gt;
 
 &lt;figure class=&quot;highlight&quot;&gt;
-  &lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;git clone https://github.com/MansM/docker-scalingdemo.git&lt;/code&gt;&lt;/pre&gt;
+  &lt;pre&gt;&lt;code class=&quot;language-shell&quot; data-lang=&quot;shell&quot;&gt;git clone https://github.com/MansM/docker-scalingdemo.git&lt;/code&gt;&lt;/pre&gt;
 &lt;/figure&gt;
 
 &lt;h3 id=&quot;consul-server&quot;&gt;Consul server&lt;/h3&gt;
 &lt;p&gt;Change to the folder in your terminal or Windows command line where the Git repository is located. The Consul server is the ‘consul-server’ container made by Gliderlabs, to start it:&lt;/p&gt;
 
 &lt;figure class=&quot;highlight&quot;&gt;
-  &lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;docker run --rm --name consul -p 8500:8500 gliderlabs/consul-server -bootstrap-expect 1&lt;/code&gt;&lt;/pre&gt;
+  &lt;pre&gt;&lt;code class=&quot;language-shell&quot; data-lang=&quot;shell&quot;&gt;docker run --rm --name consul -p 8500:8500 gliderlabs/consul-server -bootstrap-expect 1&lt;/code&gt;&lt;/pre&gt;
 &lt;/figure&gt;
 
 &lt;p&gt;To view the Consul server UI, you can browse to the docker_ip:8500, you can locate the IP with running the command:&lt;/p&gt;
 
 &lt;figure class=&quot;highlight&quot;&gt;
-  &lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;docker-machine ip default &lt;/code&gt;&lt;/pre&gt;
+  &lt;pre&gt;&lt;code class=&quot;language-shell&quot; data-lang=&quot;shell&quot;&gt;docker-machine ip default &lt;/code&gt;&lt;/pre&gt;
 &lt;/figure&gt;
 
 &lt;p&gt;If ‘default’ is not the correct Docker-machine, find the correct one with “docker-machine ls”.&lt;/p&gt;
@@ -167,7 +443,7 @@ On starting the terminal/command line you will have to direct to the location of
 &lt;p&gt;Now it’s time to add a webserver to the pool. First of all we need to build and run the Docker container:&lt;/p&gt;
 
 &lt;figure class=&quot;highlight&quot;&gt;
-  &lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;docker build -t apachephp apachephp
+  &lt;pre&gt;&lt;code class=&quot;language-shell&quot; data-lang=&quot;shell&quot;&gt;docker build -t apachephp apachephp
 docker run  --rm --name web -p 8080:80 --link&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;consul&quot;&lt;/span&gt; apachephp&lt;/code&gt;&lt;/pre&gt;
 &lt;/figure&gt;
 

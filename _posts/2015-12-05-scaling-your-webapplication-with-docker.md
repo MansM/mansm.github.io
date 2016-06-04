@@ -74,19 +74,19 @@ Three different containers can be identified:
 - Web service with Consul agent
 
 First of all, get the Git repository with the example code:
-{% highlight bash %}
+{% highlight shell %}
 git clone https://github.com/MansM/docker-scalingdemo.git
 {% endhighlight %}
 
 ### Consul server
 Change to the folder in your terminal or Windows command line where the Git repository is located. The Consul server is the 'consul-server' container made by Gliderlabs, to start it:
 
-{% highlight bash %}
+{% highlight shell %}
 docker run --rm --name consul -p 8500:8500 gliderlabs/consul-server -bootstrap-expect 1
 {% endhighlight %}
 
 To view the Consul server UI, you can browse to the docker_ip:8500, you can locate the IP with running the command:
-{% highlight bash %}
+{% highlight shell %}
 docker-machine ip default 
 {% endhighlight %}
 If 'default' is not the correct Docker-machine, find the correct one with "docker-machine ls".
@@ -97,7 +97,7 @@ You should now see something like:
 ### Web application
 Now it's time to add a webserver to the pool. First of all we need to build and run the Docker container:
 
-{% highlight bash %}
+{% highlight shell %}
 docker build -t apachephp apachephp
 docker run  --rm --name web -p 8080:80 --link="consul" apachephp
 {% endhighlight %}
