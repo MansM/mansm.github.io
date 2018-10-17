@@ -4,11 +4,146 @@
     <title>MansM tech babble</title>
     <description>My journey through technology
 </description>
-    <link>http://www.mansm.io/</link>
-    <atom:link href="http://www.mansm.io/feed.xml" rel="self" type="application/rss+xml"/>
-    <pubDate>Sat, 04 Jun 2016 14:50:16 +0000</pubDate>
-    <lastBuildDate>Sat, 04 Jun 2016 14:50:16 +0000</lastBuildDate>
-    <generator>Jekyll v3.1.6</generator>
+    <link>http://0.0.0.0:4000/</link>
+    <atom:link href="http://0.0.0.0:4000/feed.xml" rel="self" type="application/rss+xml"/>
+    <pubDate>Wed, 17 Oct 2018 04:00:53 -0500</pubDate>
+    <lastBuildDate>Wed, 17 Oct 2018 04:00:53 -0500</lastBuildDate>
+    <generator>Jekyll v3.8.3</generator>
+    
+      <item>
+        <title>Building a homelab with Kubernetes and Raspberry pi's</title>
+        <description>&lt;p&gt;&lt;strong&gt;Building a homelab using modern tools/methods like Kubernetes, GitOps and Raspberry Pi’s&lt;/strong&gt;&lt;/p&gt;
+
+&lt;div class=&quot;toc&quot;&gt;
+  &lt;h4&gt;Contents&lt;/h4&gt;
+&lt;ul id=&quot;markdown-toc&quot;&gt;
+  &lt;li&gt;&lt;a href=&quot;#why&quot; id=&quot;markdown-toc-why&quot;&gt;Why&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;#what&quot; id=&quot;markdown-toc-what&quot;&gt;What&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;#who&quot; id=&quot;markdown-toc-who&quot;&gt;Who&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;#hardware-i-used&quot; id=&quot;markdown-toc-hardware-i-used&quot;&gt;Hardware I used&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;#prerequisites&quot; id=&quot;markdown-toc-prerequisites&quot;&gt;Prerequisites&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;#installing-the-master&quot; id=&quot;markdown-toc-installing-the-master&quot;&gt;Installing the master&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;#installing-the-node-or-multiple&quot; id=&quot;markdown-toc-installing-the-node-or-multiple&quot;&gt;Installing the node (or multiple)&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;#configuring-kubectl&quot; id=&quot;markdown-toc-configuring-kubectl&quot;&gt;Configuring kubectl&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;#networking&quot; id=&quot;markdown-toc-networking&quot;&gt;Networking&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;#finishing-touches&quot; id=&quot;markdown-toc-finishing-touches&quot;&gt;Finishing touches&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;#what-i-still-want-to-do&quot; id=&quot;markdown-toc-what-i-still-want-to-do&quot;&gt;What I still want to do&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;/div&gt;
+
+&lt;h2 id=&quot;why&quot;&gt;Why&lt;/h2&gt;
+&lt;p&gt;In my current job I work a lot with container technologies, and for a lot of items I want to automate the stuff I use at home with the same tech. Unfortonatly I dont have the cash for racks full of servers, SAN’s, fiber switches etc etc (my girlfriend would also kill me). So I had to scale down a bit and reuse the equipment I already have.&lt;/p&gt;
+
+&lt;h1 id=&quot;what&quot;&gt;What&lt;/h1&gt;
+&lt;p&gt;If your home is a bit like mine, you probably run some services. Mediaplayers, mediaservers, domotica, some websites, etc. I had some spare raspberries laying around so I decided to install kubernetes on them. Kubernetes is an open-source system for deployment, scaling container workloads. Why is this important. If you run just containers one host its easy, but when you do it on multiple you need some system to do it for you.&lt;/p&gt;
+
+&lt;h1 id=&quot;who&quot;&gt;Who&lt;/h1&gt;
+&lt;p&gt;This is easy: you&lt;/p&gt;
+
+&lt;h1 id=&quot;hardware-i-used&quot;&gt;Hardware I used&lt;/h1&gt;
+&lt;ul&gt;
+  &lt;li&gt;Raspberry Pi 2b&lt;/li&gt;
+  &lt;li&gt;Raspberry Pi 3b&lt;/li&gt;
+  &lt;li&gt;Simple network switch&lt;/li&gt;
+  &lt;li&gt;Synology DS1515+ (for persistent storage)&lt;/li&gt;
+  &lt;li&gt;Micro USB power cables&lt;/li&gt;
+  &lt;li&gt;Flat ethernet cables (as short as possible)&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h1 id=&quot;prerequisites&quot;&gt;Prerequisites&lt;/h1&gt;
+&lt;p&gt;First download the latest Hypriot linux build for your raspberry and write them to the sd cards. 
+I recommend to give your raspberries static IP’s or give them static IP’s through DHCP. Log in to the raspberries and
+give them a nice hostname (when you are at it, dont forget to update). Kubernetes takes the amount of available memory in account, so we need to disable swap. Do this by removing the swap entry from /etc/fstab and the command: &lt;code class=&quot;highlighter-rouge&quot;&gt;swapoff -a&lt;/code&gt;. You have to do this on all hosts&lt;/p&gt;
+
+&lt;h1 id=&quot;installing-the-master&quot;&gt;Installing the master&lt;/h1&gt;
+&lt;p&gt;First we need to install kubeadm. Kubeadm is the tool that manages the lifecycle of a Kubernetes cluster. As kubeadm is not in the default repositories we need to install the kubernetes repository first, before we can use it we also need to add the GPG key:&lt;/p&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;curl -fsSL https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add -
+add-apt-repository &quot;deb https://download.docker.com/linux/debian $(lsb_release -cs) stable&quot;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;p&gt;&lt;br /&gt;
+When we have the repository available we can install kubeadm with the following command: &lt;code class=&quot;highlighter-rouge&quot;&gt;apt install -y kubeadm&lt;/code&gt;&lt;br /&gt;
+Kubeadm expects already to have an available kubelet, kubelet is the component on every kubernetes machine (masters and workers) that starts the pods.
+Install kubelet: &lt;code class=&quot;highlighter-rouge&quot;&gt;apt install -y kubelet&lt;/code&gt;. Note: when you are using Vagrant you need to edit the kubelet configuration to use the secondairy nic:
+open &lt;code class=&quot;highlighter-rouge&quot;&gt;/etc/default/kubelet&lt;/code&gt; in your favorite editor and make sure the following line is present: &lt;code class=&quot;highlighter-rouge&quot;&gt;KUBELET_EXTRA_ARGS=--node-ip=192.168.10.10&lt;/code&gt;, where 192.168.10.10 is the ip of the secondairy nic. Restart kubelet afterwards (systemctl restart kubelet).&lt;/p&gt;
+
+&lt;p&gt;The full init process takes a while and can sometimes fail on pulling images, to reduce the chance of this happening we can prepull the images with:
+&lt;code class=&quot;highlighter-rouge&quot;&gt;kubeadm config images pull&lt;/code&gt; Run this until all images are successfully pulled.
+«TODO: insert screenshot of kubeadm prefetch»&lt;/p&gt;
+
+&lt;p&gt;Now comes the big step, we will start the initialization process of the cluster. We do this with running the following command:&lt;/p&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;kubeadm init \
+  --pod-network-cidr=10.244.0.0/16 \
+  --kubernetes-version=1.12.0
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;p&gt;when using vagrant you need to add: &lt;code class=&quot;highlighter-rouge&quot;&gt;--apiserver-advertise-address=192.168.10.10&lt;/code&gt;, where 192.168.10.10 is the ip of the secondairy nic.
+&lt;img src=&quot;/images/2018-11-homelab/kubeadm_init.png&quot; alt=&quot;Kubeadm init output&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;As the the Kubernetes apiserver starts slower then amount of it time it has to start kubelet will kill the starting container and tries again. To prevent this we will need to update the deployment manifest of the apiserver to make sure it gets more time. Open /etc/kubernetes/manifests/kube-apiserver.yaml in your favorite editor (or just use sed) and find this line: &lt;code class=&quot;highlighter-rouge&quot;&gt;failureThreshold: 8&lt;/code&gt;, replace the 8 with 20 and save. Now we need to wait or kill the apiserver by ourselves.&lt;br /&gt;
+ «TODO: how to kill apiserver»&lt;/p&gt;
+
+&lt;h1 id=&quot;installing-the-node-or-multiple&quot;&gt;Installing the node (or multiple)&lt;/h1&gt;
+&lt;p&gt;Installing the nodes a lot simmilar to installing the masters. We start by installing kubeadm and kubelet (&lt;code class=&quot;highlighter-rouge&quot;&gt;apt install -y kubelet kubeadm&lt;/code&gt;).  Note: when you are using Vagrant you need to edit the kubelet configuration to use the secondairy nic:
+open &lt;code class=&quot;highlighter-rouge&quot;&gt;/etc/default/kubelet&lt;/code&gt; in your favorite editor and make sure the following line is present: &lt;code class=&quot;highlighter-rouge&quot;&gt;KUBELET_EXTRA_ARGS=--node-ip=192.168.10.10&lt;/code&gt;, where 192.168.10.10 is the ip of the secondairy nic. Restart kubelet afterwards (systemctl restart kubelet). In the output of the init command of the master a line came how you can have the node join the master. But in case you lost this output or you have wait too long (it expires after 24 hours), you can do it as well with the following steps on the master:&lt;/p&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;kubeadm token create
+openssl x509 -pubkey -in /etc/kubernetes/pki/ca.crt | openssl rsa -pubin -outform der 2&amp;gt;/dev/null | openssl dgst -sha256 -hex | sed 's/^.* //'
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;p&gt;«TODO: insert screenshot of tokenstuff»&lt;/p&gt;
+
+&lt;p&gt;On the node we will use the output of the commands in the join command:&lt;/p&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;kubeadm join 192.168.10.10:6443 \
+  --token &amp;lt;&amp;lt;output of the first command&amp;gt;&amp;gt; \
+  --discovery-token-ca-cert-hash sha256:&amp;lt;&amp;lt;output of the second command&amp;gt;&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;p&gt;&lt;img src=&quot;/images/2018-11-homelab/kubeadm_join.png&quot; alt=&quot;Kubeadm join output&quot; /&gt;&lt;/p&gt;
+
+&lt;h1 id=&quot;configuring-kubectl&quot;&gt;Configuring kubectl&lt;/h1&gt;
+&lt;p&gt;To access the newly Kubernetes cluster we will use the commandline tool called kubectl, people like me dont like to type it fully everytime, so I tend to alias it
+«TODO: how to install kubectl»
+export KUBECONFIG=/etc/kubernetes/admin.conf&lt;/p&gt;
+
+&lt;h1 id=&quot;networking&quot;&gt;Networking&lt;/h1&gt;
+&lt;p&gt;As Kubernetes allows you to choose which networking plugin you want to use, it comes default without. This is why you nodes show as NotReady:
+&lt;img src=&quot;/images/2018-11-homelab/kubectl_get_nodes_not_ready.png&quot; alt=&quot;Kubectl get nodes (notReady)&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;We can fix this by installing flannel (I have chosen Flannel as it comes with auto enablers for multiple platforms (amd64/arm/etc)). On master1 run:
+&lt;code class=&quot;highlighter-rouge&quot;&gt;kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml&lt;/code&gt;
+After a short while your nodes will turn to ready:&lt;br /&gt;
+&lt;img src=&quot;/images/2018-11-homelab/kubectl_get_nodes_ready.png&quot; alt=&quot;Kubectl get nodes (notReady)&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;«TODO: ingress»&lt;/p&gt;
+
+&lt;h1 id=&quot;finishing-touches&quot;&gt;Finishing touches&lt;/h1&gt;
+&lt;ul&gt;
+  &lt;li&gt;helm?&lt;/li&gt;
+  &lt;li&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h1 id=&quot;what-i-still-want-to-do&quot;&gt;What I still want to do&lt;/h1&gt;
+&lt;p&gt;Adding monitoring
+Adding logging
+Using PoE powered Raspberry Pi 3b+
+Using MetalLB with Ubiquiti USG for&lt;/p&gt;
+
+</description>
+        <pubDate>Sun, 30 Sep 2018 12:00:00 -0500</pubDate>
+        <link>http://0.0.0.0:4000/kuberetes/raspberry/rpi/2018/09/30/building-homelab.html</link>
+        <guid isPermaLink="true">http://0.0.0.0:4000/kuberetes/raspberry/rpi/2018/09/30/building-homelab.html</guid>
+        
+        <category>Kuberetes</category>
+        
+        <category>Raspberry</category>
+        
+        <category>rpi</category>
+        
+        
+        <category>Kuberetes</category>
+        
+        <category>Raspberry</category>
+        
+        <category>rpi</category>
+        
+      </item>
     
       <item>
         <title>Starting fresh with Jenkins 2.0</title>
@@ -47,7 +182,7 @@ The language in the script is Jenkins DSL, which is almost identical to groovy.&
 Jenkins relies heavily on plugins. To add plugins we use a &lt;a href=&quot;/images/plugins.txt&quot;&gt;file&lt;/a&gt; with all the required plugins. With the plugins file I use, Jenkins still wants to get some more… So don’t be alarmed when you see a message of this starting it the first time. To install the plugins during the build of the Docker image we copy the plugins.txt into the image (line 3) and use it as a source when executing the plugin installer (line 4).&lt;/p&gt;
 
 &lt;figure class=&quot;highlight&quot;&gt;
-  &lt;pre&gt;&lt;code class=&quot;language-ruby&quot; data-lang=&quot;ruby&quot;&gt;&lt;table style=&quot;border-spacing: 0&quot;&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td class=&quot;gutter gl&quot; style=&quot;text-align: right&quot;&gt;&lt;pre class=&quot;lineno&quot;&gt;1
+  &lt;pre&gt;&lt;code class=&quot;language-ruby&quot; data-lang=&quot;ruby&quot;&gt;&lt;table class=&quot;rouge-table&quot;&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td class=&quot;gutter gl&quot;&gt;&lt;pre class=&quot;lineno&quot;&gt;1
 2
 3
 4
@@ -61,7 +196,8 @@ Jenkins relies heavily on plugins. To add plugins we use a &lt;a href=&quot;/ima
 12
 13
 14
-15&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;no&quot;&gt;FROM&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;jenkinsci&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;/&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;jenkins&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;2&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;7&lt;/span&gt;
+15
+&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;no&quot;&gt;FROM&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;jenkinsci&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;/&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;jenkins&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;mf&quot;&gt;2.7&lt;/span&gt;
 &lt;span class=&quot;c1&quot;&gt;#plugins&lt;/span&gt;
 &lt;span class=&quot;no&quot;&gt;COPY&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;plugins&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;txt&lt;/span&gt; &lt;span class=&quot;sr&quot;&gt;/usr/s&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;hare&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;/&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;jenkins&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;/&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;plugins&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;txt&lt;/span&gt;
 &lt;span class=&quot;no&quot;&gt;RUN&lt;/span&gt; &lt;span class=&quot;sr&quot;&gt;/usr/&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;local&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;/&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;bin&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;/&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;plugins&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;sh&lt;/span&gt; &lt;span class=&quot;sr&quot;&gt;/usr/s&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;hare&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;/&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;jenkins&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;/&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;plugins&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;txt&lt;/span&gt;
@@ -75,15 +211,14 @@ Jenkins relies heavily on plugins. To add plugins we use a &lt;a href=&quot;/ima
 &lt;span class=&quot;no&quot;&gt;RUN&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;usermod&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;-&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;a&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;-&lt;/span&gt;&lt;span class=&quot;no&quot;&gt;G&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;users&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;jenkins&lt;/span&gt;
 &lt;span class=&quot;no&quot;&gt;RUN&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;usermod&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;-&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;a&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;-&lt;/span&gt;&lt;span class=&quot;no&quot;&gt;G&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;100&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;jenkins&lt;/span&gt;
 
-&lt;span class=&quot;no&quot;&gt;USER&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;jenkins&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
-&lt;/span&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/tbody&gt;&lt;/table&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;span class=&quot;no&quot;&gt;USER&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;jenkins&lt;/span&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/tbody&gt;&lt;/table&gt;&lt;/code&gt;&lt;/pre&gt;
 &lt;/figure&gt;
 
 &lt;h2 id=&quot;jenkinsfile&quot;&gt;Jenkinsfile&lt;/h2&gt;
 &lt;p&gt;The Jenkinsfile in here is just an example of what you can do. It is not really a working script as I would never use scripts called somescript.sh ;-) .&lt;/p&gt;
 
 &lt;figure class=&quot;highlight&quot;&gt;
-  &lt;pre&gt;&lt;code class=&quot;language-groovy&quot; data-lang=&quot;groovy&quot;&gt;&lt;table style=&quot;border-spacing: 0&quot;&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td class=&quot;gutter gl&quot; style=&quot;text-align: right&quot;&gt;&lt;pre class=&quot;lineno&quot;&gt;1
+  &lt;pre&gt;&lt;code class=&quot;language-groovy&quot; data-lang=&quot;groovy&quot;&gt;&lt;table class=&quot;rouge-table&quot;&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td class=&quot;gutter gl&quot;&gt;&lt;pre class=&quot;lineno&quot;&gt;1
 2
 3
 4
@@ -110,24 +245,25 @@ Jenkins relies heavily on plugins. To add plugins we use a &lt;a href=&quot;/ima
 25
 26
 27
-28&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;n&quot;&gt;node&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;&#39;master&#39;&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;{&lt;/span&gt;
+28
+&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;n&quot;&gt;node&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;'master'&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;{&lt;/span&gt;
   
   &lt;span class=&quot;n&quot;&gt;stage&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;prepare&quot;&lt;/span&gt;
   &lt;span class=&quot;n&quot;&gt;checkout&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;scm&lt;/span&gt;
 
   &lt;span class=&quot;n&quot;&gt;stage&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;build&quot;&lt;/span&gt;
-  &lt;span class=&quot;n&quot;&gt;node&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;&#39;docker-buildslave-centos7&#39;&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;{&lt;/span&gt;
-    &lt;span class=&quot;n&quot;&gt;withCredentials&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;([[&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;$class&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;&#39;UsernamePasswordMultiBinding&#39;&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;nl&quot;&gt;credentialsId:&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;&#39;foo-credenitals&#39;&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;nl&quot;&gt;passwordVariable:&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;&#39;FOO_PASS&#39;&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;nl&quot;&gt;usernameVariable:&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;&#39;FOO_USER&#39;&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;]])&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;{&lt;/span&gt;
-      &lt;span class=&quot;n&quot;&gt;sh&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;sed -i &#39;s/CHANGEUSER/${env.FOO_USER}/g&#39; somescript.sh&quot;&lt;/span&gt;
-      &lt;span class=&quot;n&quot;&gt;sh&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;sed -i &#39;s/CHANGEPASS/${env.FOO_PASS}/g&#39; somescript.sh&quot;&lt;/span&gt;
+  &lt;span class=&quot;n&quot;&gt;node&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;'docker-buildslave-centos7'&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;{&lt;/span&gt;
+    &lt;span class=&quot;n&quot;&gt;withCredentials&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;([[&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;$class&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'UsernamePasswordMultiBinding'&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;nl&quot;&gt;credentialsId:&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'foo-credenitals'&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;nl&quot;&gt;passwordVariable:&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'FOO_PASS'&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;nl&quot;&gt;usernameVariable:&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'FOO_USER'&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;]])&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;{&lt;/span&gt;
+      &lt;span class=&quot;n&quot;&gt;sh&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;sed -i 's/CHANGEUSER/${env.FOO_USER}/g' somescript.sh&quot;&lt;/span&gt;
+      &lt;span class=&quot;n&quot;&gt;sh&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;sed -i 's/CHANGEPASS/${env.FOO_PASS}/g' somescript.sh&quot;&lt;/span&gt;
     &lt;span class=&quot;o&quot;&gt;}&lt;/span&gt;
     &lt;span class=&quot;n&quot;&gt;sh&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;chmod +x somescript.sh&quot;&lt;/span&gt;
     &lt;span class=&quot;n&quot;&gt;sh&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;./somescript.sh&quot;&lt;/span&gt;
-    &lt;span class=&quot;n&quot;&gt;stash&lt;/span&gt; &lt;span class=&quot;nl&quot;&gt;includes:&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;&#39;*.bin&#39;&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;nl&quot;&gt;name:&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;&#39;bins&#39;&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;nl&quot;&gt;useDefaultExcludes:&lt;/span&gt; &lt;span class=&quot;kc&quot;&gt;false&lt;/span&gt;
+    &lt;span class=&quot;n&quot;&gt;stash&lt;/span&gt; &lt;span class=&quot;nl&quot;&gt;includes:&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'*.bin'&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;nl&quot;&gt;name:&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'bins'&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;nl&quot;&gt;useDefaultExcludes:&lt;/span&gt; &lt;span class=&quot;kc&quot;&gt;false&lt;/span&gt;
   &lt;span class=&quot;o&quot;&gt;}&lt;/span&gt;
 
   &lt;span class=&quot;n&quot;&gt;stage&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;test&quot;&lt;/span&gt;
-  &lt;span class=&quot;n&quot;&gt;node&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;&#39;docker-test-centos7&#39;&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;{&lt;/span&gt;
+  &lt;span class=&quot;n&quot;&gt;node&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;'docker-test-centos7'&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;{&lt;/span&gt;
     &lt;span class=&quot;n&quot;&gt;checkout&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;scm&lt;/span&gt;
     &lt;span class=&quot;n&quot;&gt;unstash&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;bins&lt;/span&gt;
     &lt;span class=&quot;n&quot;&gt;sh&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;./testscript.sh&quot;&lt;/span&gt;
@@ -137,14 +273,13 @@ Jenkins relies heavily on plugins. To add plugins we use a &lt;a href=&quot;/ima
   &lt;span class=&quot;n&quot;&gt;unstash&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;bins&lt;/span&gt;
   &lt;span class=&quot;err&quot;&gt;#&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Upload&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;somewhere&lt;/span&gt;
 
-&lt;span class=&quot;o&quot;&gt;}&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
-&lt;/span&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/tbody&gt;&lt;/table&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;span class=&quot;o&quot;&gt;}&lt;/span&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/tbody&gt;&lt;/table&gt;&lt;/code&gt;&lt;/pre&gt;
 &lt;/figure&gt;
 
 </description>
-        <pubDate>Wed, 27 Apr 2016 17:00:00 +0000</pubDate>
-        <link>http://www.mansm.io/docker/jenkins/jenkinsfile/2016/04/27/jenkins-2.0.html</link>
-        <guid isPermaLink="true">http://www.mansm.io/docker/jenkins/jenkinsfile/2016/04/27/jenkins-2.0.html</guid>
+        <pubDate>Wed, 27 Apr 2016 12:00:00 -0500</pubDate>
+        <link>http://0.0.0.0:4000/docker/jenkins/jenkinsfile/2016/04/27/jenkins-2.0.html</link>
+        <guid isPermaLink="true">http://0.0.0.0:4000/docker/jenkins/jenkinsfile/2016/04/27/jenkins-2.0.html</guid>
         
         <category>Docker</category>
         
@@ -172,9 +307,9 @@ Jenkins relies heavily on plugins. To add plugins we use a &lt;a href=&quot;/ima
 &lt;script async=&quot;&quot; class=&quot;speakerdeck-embed&quot; data-id=&quot;30d61850f67446e4abd62199f00ebebc&quot; data-ratio=&quot;1.77777777777778&quot; src=&quot;//speakerdeck.com/assets/embed.js&quot;&gt;&lt;/script&gt;
 
 </description>
-        <pubDate>Sun, 13 Mar 2016 17:00:00 +0000</pubDate>
-        <link>http://www.mansm.io/presentation/nomad/hashicorp/meetup/2016/03/13/Presentation-on-Nomad.html</link>
-        <guid isPermaLink="true">http://www.mansm.io/presentation/nomad/hashicorp/meetup/2016/03/13/Presentation-on-Nomad.html</guid>
+        <pubDate>Sun, 13 Mar 2016 12:00:00 -0500</pubDate>
+        <link>http://0.0.0.0:4000/presentation/nomad/hashicorp/meetup/2016/03/13/Presentation-on-Nomad.html</link>
+        <guid isPermaLink="true">http://0.0.0.0:4000/presentation/nomad/hashicorp/meetup/2016/03/13/Presentation-on-Nomad.html</guid>
         
         <category>Presentation</category>
         
@@ -206,15 +341,17 @@ Docker environments over multiple servers and/or datacenters using Nomad.This po
 
 &lt;/div&gt;
 
-&lt;p&gt;##Tooling
-- Docker: Container management software
-- Nomad: A distributed, high available. datacenter-aware scheduler
-- Consul: A tool for service discovery and configuration
-- Ansible (version 2): platform for deploying software and configuration management
-- Git: Version control system for source code
-- Virtualbox: Free hypervisor
-- Vagrant: Wrapper around virtualbox, which allows you to script vm provisioning. 
-- Webapp &amp;amp; haproxy: basic 2-tier application which is described in the previous post&lt;/p&gt;
+&lt;p&gt;##Tooling&lt;/p&gt;
+&lt;ul&gt;
+  &lt;li&gt;Docker: Container management software&lt;/li&gt;
+  &lt;li&gt;Nomad: A distributed, high available. datacenter-aware scheduler&lt;/li&gt;
+  &lt;li&gt;Consul: A tool for service discovery and configuration&lt;/li&gt;
+  &lt;li&gt;Ansible (version 2): platform for deploying software and configuration management&lt;/li&gt;
+  &lt;li&gt;Git: Version control system for source code&lt;/li&gt;
+  &lt;li&gt;Virtualbox: Free hypervisor&lt;/li&gt;
+  &lt;li&gt;Vagrant: Wrapper around virtualbox, which allows you to script vm provisioning.&lt;/li&gt;
+  &lt;li&gt;Webapp &amp;amp; haproxy: basic 2-tier application which is described in the previous post&lt;/li&gt;
+&lt;/ul&gt;
 
 &lt;p&gt;On your local machine you need to install vagrant, virtualbox and ansible. I can highly recommed using chocolatey on windows or brew on osx for
 installing the applications. Keep in mind you need to install version 2 of ansible (brew install –devel ansible), this because I need to use some 
@@ -254,7 +391,7 @@ On the machines with the name nomadserver1 and nomadserver2 the following compon
 setup by using roles.&lt;/p&gt;
 
 &lt;figure class=&quot;highlight&quot;&gt;
-  &lt;pre&gt;&lt;code class=&quot;language-yaml&quot; data-lang=&quot;yaml&quot;&gt;&lt;table style=&quot;border-spacing: 0&quot;&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td class=&quot;gutter gl&quot; style=&quot;text-align: right&quot;&gt;&lt;pre class=&quot;lineno&quot;&gt;1
+  &lt;pre&gt;&lt;code class=&quot;language-yaml&quot; data-lang=&quot;yaml&quot;&gt;&lt;table class=&quot;rouge-table&quot;&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td class=&quot;gutter gl&quot;&gt;&lt;pre class=&quot;lineno&quot;&gt;1
 2
 3
 4
@@ -271,25 +408,25 @@ setup by using roles.&lt;/p&gt;
 15
 16
 17
-18&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;pi&quot;&gt;-&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;hosts&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;nomadserver*&lt;/span&gt;
-  &lt;span class=&quot;s&quot;&gt;become&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;yes&lt;/span&gt;
-  &lt;span class=&quot;s&quot;&gt;vars&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt;
-   &lt;span class=&quot;pi&quot;&gt;-&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;consul_type&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;server&quot;&lt;/span&gt;
-  &lt;span class=&quot;s&quot;&gt;roles&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt;
+18
+&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;pi&quot;&gt;-&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;hosts&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;nomadserver*&lt;/span&gt;
+  &lt;span class=&quot;na&quot;&gt;become&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;yes&lt;/span&gt;
+  &lt;span class=&quot;na&quot;&gt;vars&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt;
+   &lt;span class=&quot;pi&quot;&gt;-&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;consul_type&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;server&quot;&lt;/span&gt;
+  &lt;span class=&quot;na&quot;&gt;roles&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt;
     &lt;span class=&quot;pi&quot;&gt;-&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;consul&lt;/span&gt;
     &lt;span class=&quot;pi&quot;&gt;-&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;bind&lt;/span&gt;
     &lt;span class=&quot;pi&quot;&gt;-&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;nomad&lt;/span&gt;
 
-&lt;span class=&quot;pi&quot;&gt;-&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;hosts&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;nomadserver2&lt;/span&gt;
-  &lt;span class=&quot;s&quot;&gt;become&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;yes&lt;/span&gt;
-  &lt;span class=&quot;s&quot;&gt;tasks&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt;
-    &lt;span class=&quot;pi&quot;&gt;-&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;name&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;consul cluster maken&lt;/span&gt;
-      &lt;span class=&quot;s&quot;&gt;command&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;/usr/bin/consul join&lt;/span&gt; 
-    &lt;span class=&quot;pi&quot;&gt;-&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;name&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;nomad cluster maken&lt;/span&gt;
-      &lt;span class=&quot;s&quot;&gt;environment&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt;
-        &lt;span class=&quot;s&quot;&gt;NOMAD_ADDR&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;http://:4646&quot;&lt;/span&gt;
-      &lt;span class=&quot;s&quot;&gt;shell&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;/usr/bin/nomad server-join&lt;/span&gt; &lt;span class=&quot;w&quot;&gt;
-&lt;/span&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/tbody&gt;&lt;/table&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;span class=&quot;pi&quot;&gt;-&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;hosts&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;nomadserver2&lt;/span&gt;
+  &lt;span class=&quot;na&quot;&gt;become&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;yes&lt;/span&gt;
+  &lt;span class=&quot;na&quot;&gt;tasks&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt;
+    &lt;span class=&quot;pi&quot;&gt;-&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;name&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;consul cluster maken&lt;/span&gt;
+      &lt;span class=&quot;na&quot;&gt;command&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;/usr/bin/consul join&lt;/span&gt; 
+    &lt;span class=&quot;pi&quot;&gt;-&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;name&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;nomad cluster maken&lt;/span&gt;
+      &lt;span class=&quot;na&quot;&gt;environment&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt;
+        &lt;span class=&quot;na&quot;&gt;NOMAD_ADDR&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;http://:4646&quot;&lt;/span&gt;
+      &lt;span class=&quot;na&quot;&gt;shell&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;/usr/bin/nomad server-join&lt;/span&gt; &lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/tbody&gt;&lt;/table&gt;&lt;/code&gt;&lt;/pre&gt;
 &lt;/figure&gt;
 
 &lt;p&gt;On the nomadservers the consul is running in server mode and form together a cluser. All the consul agents running in next to 
@@ -297,9 +434,9 @@ setup by using roles.&lt;/p&gt;
 
 &lt;p&gt;###Dockerservers&lt;/p&gt;
 </description>
-        <pubDate>Thu, 31 Dec 2015 17:00:00 +0000</pubDate>
-        <link>http://www.mansm.io/docker/consul/nomad/ansible/2015/12/31/extending-ha.html</link>
-        <guid isPermaLink="true">http://www.mansm.io/docker/consul/nomad/ansible/2015/12/31/extending-ha.html</guid>
+        <pubDate>Thu, 31 Dec 2015 11:00:00 -0600</pubDate>
+        <link>http://0.0.0.0:4000/docker/consul/nomad/ansible/2015/12/31/extending-ha.html</link>
+        <guid isPermaLink="true">http://0.0.0.0:4000/docker/consul/nomad/ansible/2015/12/31/extending-ha.html</guid>
         
         <category>Docker</category>
         
@@ -396,7 +533,7 @@ I prefer to use Git Bash instead of Docker Quickstart Terminal because it allows
 &lt;p&gt;Open a terminal/command line and create a new Docker-machine with the command:&lt;/p&gt;
 
 &lt;figure class=&quot;highlight&quot;&gt;
-  &lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;docker-machine create --driver &lt;span class=&quot;s2&quot;&gt;&quot;virtualbox&quot;&lt;/span&gt; default&lt;/code&gt;&lt;/pre&gt;
+  &lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;docker-machine create &lt;span class=&quot;nt&quot;&gt;--driver&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;virtualbox&quot;&lt;/span&gt; default&lt;/code&gt;&lt;/pre&gt;
 &lt;/figure&gt;
 
 &lt;p&gt;To prevent the other Docker tooling (like the Quickstart Terminal or Kitematic) creating a new Docker virtual machine, I’ve used the default name ‘default’.
@@ -425,7 +562,7 @@ On starting the terminal/command line you will have to direct to the location of
 &lt;p&gt;Change to the folder in your terminal or Windows command line where the Git repository is located. The Consul server is the ‘consul-server’ container made by Gliderlabs, to start it:&lt;/p&gt;
 
 &lt;figure class=&quot;highlight&quot;&gt;
-  &lt;pre&gt;&lt;code class=&quot;language-shell&quot; data-lang=&quot;shell&quot;&gt;docker run --rm --name consul -p 8500:8500 gliderlabs/consul-server -bootstrap-expect 1&lt;/code&gt;&lt;/pre&gt;
+  &lt;pre&gt;&lt;code class=&quot;language-shell&quot; data-lang=&quot;shell&quot;&gt;docker run &lt;span class=&quot;nt&quot;&gt;--rm&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;--name&lt;/span&gt; consul &lt;span class=&quot;nt&quot;&gt;-p&lt;/span&gt; 8500:8500 gliderlabs/consul-server &lt;span class=&quot;nt&quot;&gt;-bootstrap-expect&lt;/span&gt; 1&lt;/code&gt;&lt;/pre&gt;
 &lt;/figure&gt;
 
 &lt;p&gt;To view the Consul server UI, you can browse to the docker_ip:8500, you can locate the IP with running the command:&lt;/p&gt;
@@ -443,8 +580,8 @@ On starting the terminal/command line you will have to direct to the location of
 &lt;p&gt;Now it’s time to add a webserver to the pool. First of all we need to build and run the Docker container:&lt;/p&gt;
 
 &lt;figure class=&quot;highlight&quot;&gt;
-  &lt;pre&gt;&lt;code class=&quot;language-shell&quot; data-lang=&quot;shell&quot;&gt;docker build -t apachephp apachephp
-docker run  --rm --name web -p 8080:80 --link&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;consul&quot;&lt;/span&gt; apachephp&lt;/code&gt;&lt;/pre&gt;
+  &lt;pre&gt;&lt;code class=&quot;language-shell&quot; data-lang=&quot;shell&quot;&gt;docker build &lt;span class=&quot;nt&quot;&gt;-t&lt;/span&gt; apachephp apachephp
+docker run  &lt;span class=&quot;nt&quot;&gt;--rm&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;--name&lt;/span&gt; web &lt;span class=&quot;nt&quot;&gt;-p&lt;/span&gt; 8080:80 &lt;span class=&quot;nt&quot;&gt;--link&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;consul&quot;&lt;/span&gt; apachephp&lt;/code&gt;&lt;/pre&gt;
 &lt;/figure&gt;
 
 &lt;p&gt;When you refresh the Consul UI screen, you will see the web server has been added. 
@@ -460,7 +597,7 @@ Supervisor and Consul is copied into the image on line 12 and 13. The last line 
 in this case starting Supervisor to launch the other processes.&lt;/p&gt;
 
 &lt;figure class=&quot;highlight&quot;&gt;
-  &lt;pre&gt;&lt;code class=&quot;language-docker&quot; data-lang=&quot;docker&quot;&gt;&lt;table style=&quot;border-spacing: 0&quot;&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td class=&quot;gutter gl&quot; style=&quot;text-align: right&quot;&gt;&lt;pre class=&quot;lineno&quot;&gt;1
+  &lt;pre&gt;&lt;code class=&quot;language-docker&quot; data-lang=&quot;docker&quot;&gt;&lt;table class=&quot;rouge-table&quot;&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td class=&quot;gutter gl&quot;&gt;&lt;pre class=&quot;lineno&quot;&gt;1
 2
 3
 4
@@ -474,22 +611,22 @@ in this case starting Supervisor to launch the other processes.&lt;/p&gt;
 12
 13
 14
-15&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;FROM php:5.6-apache
-ENV CONSUL_AGENT_VERSION=0.5.2
+15
+&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;k&quot;&gt;FROM&lt;/span&gt;&lt;span class=&quot;s&quot;&gt; php:5.6-apache&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;ENV&lt;/span&gt;&lt;span class=&quot;s&quot;&gt; CONSUL_AGENT_VERSION=0.5.2&lt;/span&gt;
 
-RUN apt-get update &amp;amp;&amp;amp; apt-get install -y supervisor wget unzip
-RUN apt-get clean
+&lt;span class=&quot;k&quot;&gt;RUN &lt;/span&gt;apt-get update &lt;span class=&quot;o&quot;&gt;&amp;amp;&amp;amp;&lt;/span&gt; apt-get &lt;span class=&quot;nb&quot;&gt;install&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;-y&lt;/span&gt; supervisor wget unzip
+&lt;span class=&quot;k&quot;&gt;RUN &lt;/span&gt;apt-get clean
 
-RUN mkdir -p /var/log/supervisor
-RUN mkdir -p /etc/consul.d 
-RUN wget https://releases.hashicorp.com/consul/${CONSUL_AGENT_VERSION}/consul_${CONSUL_AGENT_VERSION}_linux_amd64.zip -O /tmp/consul-agent.zip &amp;amp;&amp;amp; unzip /tmp/consul-agent.zip &amp;amp;&amp;amp; mv consul /usr/local/bin
+&lt;span class=&quot;k&quot;&gt;RUN &lt;/span&gt;&lt;span class=&quot;nb&quot;&gt;mkdir&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;-p&lt;/span&gt; /var/log/supervisor
+&lt;span class=&quot;k&quot;&gt;RUN &lt;/span&gt;&lt;span class=&quot;nb&quot;&gt;mkdir&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;-p&lt;/span&gt; /etc/consul.d 
+&lt;span class=&quot;k&quot;&gt;RUN &lt;/span&gt;wget https://releases.hashicorp.com/consul/&lt;span class=&quot;k&quot;&gt;${&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;CONSUL_AGENT_VERSION&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;}&lt;/span&gt;/consul_&lt;span class=&quot;k&quot;&gt;${&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;CONSUL_AGENT_VERSION&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;}&lt;/span&gt;_linux_amd64.zip &lt;span class=&quot;nt&quot;&gt;-O&lt;/span&gt; /tmp/consul-agent.zip &lt;span class=&quot;o&quot;&gt;&amp;amp;&amp;amp;&lt;/span&gt; unzip /tmp/consul-agent.zip &lt;span class=&quot;o&quot;&gt;&amp;amp;&amp;amp;&lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;mv &lt;/span&gt;consul /usr/local/bin
 
-COPY src/ /var/www/html/
-COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
-COPY web.json /etc/consul.d/web.json
+&lt;span class=&quot;k&quot;&gt;COPY&lt;/span&gt;&lt;span class=&quot;s&quot;&gt; src/ /var/www/html/&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;COPY&lt;/span&gt;&lt;span class=&quot;s&quot;&gt; supervisord.conf /etc/supervisor/conf.d/supervisord.conf&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;COPY&lt;/span&gt;&lt;span class=&quot;s&quot;&gt; web.json /etc/consul.d/web.json&lt;/span&gt;
 
-CMD [&quot;/usr/bin/supervisord&quot;]&lt;span class=&quot;w&quot;&gt;
-&lt;/span&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/tbody&gt;&lt;/table&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;span class=&quot;k&quot;&gt;CMD&lt;/span&gt;&lt;span class=&quot;s&quot;&gt; [&quot;/usr/bin/supervisord&quot;]&lt;/span&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/tbody&gt;&lt;/table&gt;&lt;/code&gt;&lt;/pre&gt;
 &lt;/figure&gt;
 
 &lt;h4 id=&quot;webjson&quot;&gt;web.json&lt;/h4&gt;
@@ -497,22 +634,22 @@ CMD [&quot;/usr/bin/supervisord&quot;]&lt;span class=&quot;w&quot;&gt;
 makes the agent notify the server it is leaving when the container is stopped. This will save you from deregistering every stopped node in the Consul UI.&lt;/p&gt;
 
 &lt;figure class=&quot;highlight&quot;&gt;
-  &lt;pre&gt;&lt;code class=&quot;language-json&quot; data-lang=&quot;json&quot;&gt;&lt;table style=&quot;border-spacing: 0&quot;&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td class=&quot;gutter gl&quot; style=&quot;text-align: right&quot;&gt;&lt;pre class=&quot;lineno&quot;&gt;1
+  &lt;pre&gt;&lt;code class=&quot;language-json&quot; data-lang=&quot;json&quot;&gt;&lt;table class=&quot;rouge-table&quot;&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td class=&quot;gutter gl&quot;&gt;&lt;pre class=&quot;lineno&quot;&gt;1
 2
 3
 4
 5
 6
 7
-8&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
-  &lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&quot;service&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
-    &lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&quot;name&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;web&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
-    &lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&quot;tags&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;php&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;],&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
-    &lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&quot;port&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;80&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+8
+&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+  &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;service&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+    &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;name&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;web&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+    &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;tags&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;php&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;],&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+    &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;port&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;80&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
   &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;},&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
-  &lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&quot;leave_on_terminate&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kc&quot;&gt;true&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
-&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
-&lt;/span&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/tbody&gt;&lt;/table&gt;&lt;/code&gt;&lt;/pre&gt;
+  &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;leave_on_terminate&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kc&quot;&gt;true&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/tbody&gt;&lt;/table&gt;&lt;/code&gt;&lt;/pre&gt;
 &lt;/figure&gt;
 
 &lt;h4 id=&quot;supervisordconf&quot;&gt;supervisord.conf&lt;/h4&gt;
@@ -520,30 +657,30 @@ makes the agent notify the server it is leaving when the container is stopped. T
 log files (and retrievable with “docker logs”).&lt;/p&gt;
 
 &lt;figure class=&quot;highlight&quot;&gt;
-  &lt;pre&gt;&lt;code class=&quot;language-ini&quot; data-lang=&quot;ini&quot;&gt;&lt;table style=&quot;border-spacing: 0&quot;&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td class=&quot;gutter gl&quot; style=&quot;text-align: right&quot;&gt;&lt;pre class=&quot;lineno&quot;&gt;1
+  &lt;pre&gt;&lt;code class=&quot;language-ini&quot; data-lang=&quot;ini&quot;&gt;&lt;table class=&quot;rouge-table&quot;&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td class=&quot;gutter gl&quot;&gt;&lt;pre class=&quot;lineno&quot;&gt;1
 2
 3
 4
 5
 6
 7
-8&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;nn&quot;&gt;[supervisord]&lt;/span&gt;
+8
+&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;nn&quot;&gt;[supervisord]&lt;/span&gt;
 &lt;span class=&quot;py&quot;&gt;nodaemon&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;true&lt;/span&gt;
 
 &lt;span class=&quot;nn&quot;&gt;[program:apache]&lt;/span&gt;
 &lt;span class=&quot;py&quot;&gt;command&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;/usr/local/bin/apache2-foreground&lt;/span&gt;
 
 &lt;span class=&quot;nn&quot;&gt;[program:consulagent]&lt;/span&gt;
-&lt;span class=&quot;py&quot;&gt;command&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;consul agent -data-dir=/tmp/consul -join consul -config-dir /etc/consul.d&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
-&lt;/span&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/tbody&gt;&lt;/table&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;span class=&quot;py&quot;&gt;command&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;consul agent -data-dir=/tmp/consul -join consul -config-dir /etc/consul.d&lt;/span&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/tbody&gt;&lt;/table&gt;&lt;/code&gt;&lt;/pre&gt;
 &lt;/figure&gt;
 
 &lt;h3 id=&quot;load-balancer&quot;&gt;Load balancer&lt;/h3&gt;
 &lt;p&gt;The final container in the setup is the load balancer. You can start it with the following commands:&lt;/p&gt;
 
 &lt;figure class=&quot;highlight&quot;&gt;
-  &lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;docker build -t loadbalancer haproxy
-docker run --rm -p 80:80 -p 9000:9000 --link&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;consul&quot;&lt;/span&gt; --link&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;web&quot;&lt;/span&gt; --name loadbalancer loadbalancer&lt;/code&gt;&lt;/pre&gt;
+  &lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;docker build &lt;span class=&quot;nt&quot;&gt;-t&lt;/span&gt; loadbalancer haproxy
+docker run &lt;span class=&quot;nt&quot;&gt;--rm&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;-p&lt;/span&gt; 80:80 &lt;span class=&quot;nt&quot;&gt;-p&lt;/span&gt; 9000:9000 &lt;span class=&quot;nt&quot;&gt;--link&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;consul&quot;&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;--link&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;web&quot;&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;--name&lt;/span&gt; loadbalancer loadbalancer&lt;/code&gt;&lt;/pre&gt;
 &lt;/figure&gt;
 
 &lt;p&gt;The load balancer exists of two main components: Consul-template and Haproxy. I have chosen Haproxy in this setup so I can switch to non-HTTP backends as well.
@@ -554,7 +691,7 @@ In your browser go to docker_ip:9000/haproxy_stats (User/Pass: admin) to see the
 &lt;p&gt;The Dockerfile of the load balancer consists of installing the software (line 5 &amp;amp; 6) and copying configuration files into the image (line 9 &amp;amp; 10).&lt;/p&gt;
 
 &lt;figure class=&quot;highlight&quot;&gt;
-  &lt;pre&gt;&lt;code class=&quot;language-docker&quot; data-lang=&quot;docker&quot;&gt;&lt;table style=&quot;border-spacing: 0&quot;&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td class=&quot;gutter gl&quot; style=&quot;text-align: right&quot;&gt;&lt;pre class=&quot;lineno&quot;&gt;1
+  &lt;pre&gt;&lt;code class=&quot;language-docker&quot; data-lang=&quot;docker&quot;&gt;&lt;table class=&quot;rouge-table&quot;&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td class=&quot;gutter gl&quot;&gt;&lt;pre class=&quot;lineno&quot;&gt;1
 2
 3
 4
@@ -566,20 +703,20 @@ In your browser go to docker_ip:9000/haproxy_stats (User/Pass: admin) to see the
 10
 11
 12
-13&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;FROM debian:latest
-MAINTAINER Mans Matulewicz
-ENV CONSUL_TEMPLATE_VERSION=0.10.0
+13
+&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;k&quot;&gt;FROM&lt;/span&gt;&lt;span class=&quot;s&quot;&gt; debian:latest&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;MAINTAINER&lt;/span&gt;&lt;span class=&quot;s&quot;&gt; Mans Matulewicz&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;ENV&lt;/span&gt;&lt;span class=&quot;s&quot;&gt; CONSUL_TEMPLATE_VERSION=0.10.0&lt;/span&gt;
 
-RUN apt-get update &amp;amp;&amp;amp; apt-get install -y haproxy wget unzip
-RUN ( wget --no-check-certificate https://github.com/hashicorp/consul-template/releases/download/v${CONSUL_TEMPLATE_VERSION}/consul-template_${CONSUL_TEMPLATE_VERSION}_linux_amd64.tar.gz -O /tmp/consul_template.tar.gz &amp;amp;&amp;amp; gunzip /tmp/consul_template.tar.gz &amp;amp;&amp;amp; cd /tmp &amp;amp;&amp;amp; tar xf /tmp/consul_template.tar &amp;amp;&amp;amp; cd /tmp/consul-template* &amp;amp;&amp;amp; mv consul-template /usr/bin &amp;amp;&amp;amp; rm -rf /tmp/* )
-RUN apt-get clean
+&lt;span class=&quot;k&quot;&gt;RUN &lt;/span&gt;apt-get update &lt;span class=&quot;o&quot;&gt;&amp;amp;&amp;amp;&lt;/span&gt; apt-get &lt;span class=&quot;nb&quot;&gt;install&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;-y&lt;/span&gt; haproxy wget unzip
+&lt;span class=&quot;k&quot;&gt;RUN &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt; wget &lt;span class=&quot;nt&quot;&gt;--no-check-certificate&lt;/span&gt; https://github.com/hashicorp/consul-template/releases/download/v&lt;span class=&quot;k&quot;&gt;${&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;CONSUL_TEMPLATE_VERSION&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;}&lt;/span&gt;/consul-template_&lt;span class=&quot;k&quot;&gt;${&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;CONSUL_TEMPLATE_VERSION&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;}&lt;/span&gt;_linux_amd64.tar.gz &lt;span class=&quot;nt&quot;&gt;-O&lt;/span&gt; /tmp/consul_template.tar.gz &lt;span class=&quot;o&quot;&gt;&amp;amp;&amp;amp;&lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;gunzip&lt;/span&gt; /tmp/consul_template.tar.gz &lt;span class=&quot;o&quot;&gt;&amp;amp;&amp;amp;&lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;cd&lt;/span&gt; /tmp &lt;span class=&quot;o&quot;&gt;&amp;amp;&amp;amp;&lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;tar &lt;/span&gt;xf /tmp/consul_template.tar &lt;span class=&quot;o&quot;&gt;&amp;amp;&amp;amp;&lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;cd&lt;/span&gt; /tmp/consul-template&lt;span class=&quot;k&quot;&gt;*&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;amp;&amp;amp;&lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;mv &lt;/span&gt;consul-template /usr/bin &lt;span class=&quot;o&quot;&gt;&amp;amp;&amp;amp;&lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;rm&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;-rf&lt;/span&gt; /tmp/&lt;span class=&quot;k&quot;&gt;*&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;RUN &lt;/span&gt;apt-get clean
 
-COPY haproxy.ctmpl /etc/haproxy.ctmpl
-COPY haproxy.json /etc/haproxy.json
+&lt;span class=&quot;k&quot;&gt;COPY&lt;/span&gt;&lt;span class=&quot;s&quot;&gt; haproxy.ctmpl /etc/haproxy.ctmpl&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;COPY&lt;/span&gt;&lt;span class=&quot;s&quot;&gt; haproxy.json /etc/haproxy.json&lt;/span&gt;
 
-EXPOSE 80/tcp 9000/tcp
-CMD [&quot;consul-template&quot;, &quot;-config=/etc/haproxy.json&quot;, &quot;-consul=consul:8500&quot;]&lt;span class=&quot;w&quot;&gt;
-&lt;/span&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/tbody&gt;&lt;/table&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;span class=&quot;k&quot;&gt;EXPOSE&lt;/span&gt;&lt;span class=&quot;s&quot;&gt; 80/tcp 9000/tcp&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;CMD&lt;/span&gt;&lt;span class=&quot;s&quot;&gt; [&quot;consul-template&quot;, &quot;-config=/etc/haproxy.json&quot;, &quot;-consul=consul:8500&quot;]&lt;/span&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/tbody&gt;&lt;/table&gt;&lt;/code&gt;&lt;/pre&gt;
 &lt;/figure&gt;
 
 &lt;h4 id=&quot;haproxyctmpl&quot;&gt;haproxy.ctmpl&lt;/h4&gt;
@@ -588,22 +725,22 @@ and it will create a line for every available server. Usually the word ‘check�
 however this is not necessary in this setup.&lt;/p&gt;
 
 &lt;figure class=&quot;highlight&quot;&gt;
-  &lt;pre&gt;&lt;code class=&quot;language-nginx&quot; data-lang=&quot;nginx&quot;&gt;&lt;table style=&quot;border-spacing: 0&quot;&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td class=&quot;gutter gl&quot; style=&quot;text-align: right&quot;&gt;&lt;pre class=&quot;lineno&quot;&gt;1
+  &lt;pre&gt;&lt;code class=&quot;language-nginx&quot; data-lang=&quot;nginx&quot;&gt;&lt;table class=&quot;rouge-table&quot;&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td class=&quot;gutter gl&quot;&gt;&lt;pre class=&quot;lineno&quot;&gt;1
 2
 3
 4
 5
 6
 7
-8&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;k&quot;&gt;backend&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;nodes&lt;/span&gt;
+8
+&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;k&quot;&gt;backend&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;nodes&lt;/span&gt;
     &lt;span class=&quot;s&quot;&gt;mode&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;http&lt;/span&gt;
     &lt;span class=&quot;s&quot;&gt;option&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;forwardfor&lt;/span&gt;
     &lt;span class=&quot;s&quot;&gt;http-request&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;set-header&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;X-Forwarded-Port&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;%[dst_port]&lt;/span&gt;
     &lt;span class=&quot;s&quot;&gt;http-request&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;add-header&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;X-Forwarded-Proto&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;https&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt; &lt;span class=&quot;kn&quot;&gt;ssl_fc&lt;/span&gt; &lt;span class=&quot;err&quot;&gt;}&lt;/span&gt;
     &lt;span class=&quot;s&quot;&gt;option&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;httpchk&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;HEAD&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;/&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;HTTP/1.1&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;\&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;r&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;\&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;nHost:localhost&lt;/span&gt;
     &lt;span class=&quot;s&quot;&gt;balance&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;roundrobin&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;kn&quot;&gt;range&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;service&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&quot;web&quot;&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;}}&lt;/span&gt;
-    &lt;span class=&quot;s&quot;&gt;server&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;kn&quot;&gt;.Node&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;}}&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;kn&quot;&gt;.Address&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;}}&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:{&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;kn&quot;&gt;.Port&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;}}&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;kn&quot;&gt;end&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;}}&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
-&lt;/span&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/tbody&gt;&lt;/table&gt;&lt;/code&gt;&lt;/pre&gt;
+    &lt;span class=&quot;s&quot;&gt;server&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;kn&quot;&gt;.Node&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;}}&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;kn&quot;&gt;.Address&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;}}&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:{&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;kn&quot;&gt;.Port&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;}}&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;kn&quot;&gt;end&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;}}&lt;/span&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/tbody&gt;&lt;/table&gt;&lt;/code&gt;&lt;/pre&gt;
 &lt;/figure&gt;
 
 &lt;h4 id=&quot;haproxyjson&quot;&gt;haproxy.json&lt;/h4&gt;
@@ -611,16 +748,16 @@ however this is not necessary in this setup.&lt;/p&gt;
 configuration file.&lt;/p&gt;
 
 &lt;figure class=&quot;highlight&quot;&gt;
-  &lt;pre&gt;&lt;code class=&quot;language-javascript&quot; data-lang=&quot;javascript&quot;&gt;&lt;table style=&quot;border-spacing: 0&quot;&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td class=&quot;gutter gl&quot; style=&quot;text-align: right&quot;&gt;&lt;pre class=&quot;lineno&quot;&gt;1
+  &lt;pre&gt;&lt;code class=&quot;language-javascript&quot; data-lang=&quot;javascript&quot;&gt;&lt;table class=&quot;rouge-table&quot;&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td class=&quot;gutter gl&quot;&gt;&lt;pre class=&quot;lineno&quot;&gt;1
 2
 3
 4
-5&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;nx&quot;&gt;template&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+5
+&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;nx&quot;&gt;template&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
   &lt;span class=&quot;nx&quot;&gt;source&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;/etc/haproxy.ctmpl&quot;&lt;/span&gt;
   &lt;span class=&quot;nx&quot;&gt;destination&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;/etc/haproxy/haproxy.cfg&quot;&lt;/span&gt;
   &lt;span class=&quot;nx&quot;&gt;command&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;haproxy -f /etc/haproxy/haproxy.cfg -sf $(pidof haproxy) &amp;amp;&quot;&lt;/span&gt;
-&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
-&lt;/span&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/tbody&gt;&lt;/table&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/tbody&gt;&lt;/table&gt;&lt;/code&gt;&lt;/pre&gt;
 &lt;/figure&gt;
 
 &lt;p&gt;With the information above I have shown you how Docker works and how you can manually spin up multiple containers to build a Docker environment. In the next part I will show you
@@ -655,7 +792,7 @@ ffd06220716f        apachephp                  &lt;span class=&quot;s2&quot;&gt;
 &lt;p&gt;Now it’s time for the stuff its all about: scaling! To increase the amount of web servers to 5, you just have to give this command:&lt;/p&gt;
 
 &lt;figure class=&quot;highlight&quot;&gt;
-  &lt;pre&gt;&lt;code class=&quot;language-javascript&quot; data-lang=&quot;javascript&quot;&gt;&lt;span class=&quot;nx&quot;&gt;Manss&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;-&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;MacBook&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;-&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;Air&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;scalingdemo&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;Mans$&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;docker&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;-&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;compose&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;scale&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;web&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;5&lt;/span&gt;
+  &lt;pre&gt;&lt;code class=&quot;language-javascript&quot; data-lang=&quot;javascript&quot;&gt;&lt;span class=&quot;nx&quot;&gt;Manss&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;-&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;MacBook&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;-&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;Air&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;scalingdemo&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;Mans$&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;docker&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;-&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;compose&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;scale&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;web&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;5&lt;/span&gt;
 &lt;span class=&quot;nx&quot;&gt;Creating&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;and&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;starting&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;2&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;...&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;done&lt;/span&gt;
 &lt;span class=&quot;nx&quot;&gt;Creating&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;and&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;starting&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;3&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;...&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;done&lt;/span&gt;
 &lt;span class=&quot;nx&quot;&gt;Creating&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;and&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;starting&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;4&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;...&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;done&lt;/span&gt;
@@ -671,22 +808,22 @@ ffd06220716f        apachephp                  &lt;span class=&quot;s2&quot;&gt;
 parameters.&lt;/p&gt;
 
 &lt;figure class=&quot;highlight&quot;&gt;
-  &lt;pre&gt;&lt;code class=&quot;language-javascript&quot; data-lang=&quot;javascript&quot;&gt;&lt;span class=&quot;nx&quot;&gt;consul&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;:&lt;/span&gt;
-  &lt;span class=&quot;nl&quot;&gt;image&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;gliderlabs&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;/&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;consul&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;-&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;server&lt;/span&gt;
-  &lt;span class=&quot;nl&quot;&gt;command&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;-&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;bootstrap&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;-&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;expect&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt;
-  &lt;span class=&quot;nl&quot;&gt;ports&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;
+  &lt;pre&gt;&lt;code class=&quot;language-javascript&quot; data-lang=&quot;javascript&quot;&gt;&lt;span class=&quot;nx&quot;&gt;consul&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;
+  &lt;span class=&quot;nx&quot;&gt;image&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;gliderlabs&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;/&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;consul&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;-&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;server&lt;/span&gt;
+  &lt;span class=&quot;nx&quot;&gt;command&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;-&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;bootstrap&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;-&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;expect&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt;
+  &lt;span class=&quot;nx&quot;&gt;ports&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;
    &lt;span class=&quot;o&quot;&gt;-&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;8500:8500&quot;&lt;/span&gt;
-&lt;span class=&quot;nl&quot;&gt;loadbalancer&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;
-  &lt;span class=&quot;nl&quot;&gt;build&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;haproxy&lt;/span&gt;
-  &lt;span class=&quot;nl&quot;&gt;ports&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;
+&lt;span class=&quot;nx&quot;&gt;loadbalancer&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;
+  &lt;span class=&quot;nx&quot;&gt;build&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;haproxy&lt;/span&gt;
+  &lt;span class=&quot;nx&quot;&gt;ports&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;
    &lt;span class=&quot;o&quot;&gt;-&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;80:80&quot;&lt;/span&gt;
    &lt;span class=&quot;o&quot;&gt;-&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;9000:9000&quot;&lt;/span&gt;
-  &lt;span class=&quot;nl&quot;&gt;links&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;
+  &lt;span class=&quot;nx&quot;&gt;links&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;
    &lt;span class=&quot;o&quot;&gt;-&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;web&lt;/span&gt;
    &lt;span class=&quot;o&quot;&gt;-&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;consul&lt;/span&gt;
-&lt;span class=&quot;nl&quot;&gt;web&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;
-  &lt;span class=&quot;nl&quot;&gt;build&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;apachephp&lt;/span&gt;
-  &lt;span class=&quot;nl&quot;&gt;links&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;
+&lt;span class=&quot;nx&quot;&gt;web&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;
+  &lt;span class=&quot;nx&quot;&gt;build&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;apachephp&lt;/span&gt;
+  &lt;span class=&quot;nx&quot;&gt;links&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;
     &lt;span class=&quot;o&quot;&gt;-&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;consul&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
 &lt;/figure&gt;
 
@@ -701,9 +838,9 @@ In a later post I will add Docker swarm to the mix and extend the functionality 
   &lt;li&gt;http://technologyconversations.com/2015/07/02/scaling-to-infinity-with-docker-swarm-Docker-compose-and-consul-part-14-a-taste-of-what-is-to-come/&lt;/li&gt;
 &lt;/ul&gt;
 </description>
-        <pubDate>Sat, 05 Dec 2015 17:00:00 +0000</pubDate>
-        <link>http://www.mansm.io/docker/consul/2015/12/05/scaling-your-webapplication-with-docker.html</link>
-        <guid isPermaLink="true">http://www.mansm.io/docker/consul/2015/12/05/scaling-your-webapplication-with-docker.html</guid>
+        <pubDate>Sat, 05 Dec 2015 11:00:00 -0600</pubDate>
+        <link>http://0.0.0.0:4000/docker/consul/2015/12/05/scaling-your-webapplication-with-docker.html</link>
+        <guid isPermaLink="true">http://0.0.0.0:4000/docker/consul/2015/12/05/scaling-your-webapplication-with-docker.html</guid>
         
         <category>Docker</category>
         
