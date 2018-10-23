@@ -21,7 +21,7 @@ commentIssueId: 4
 {:toc}
 </div>
 
-## Why
+# Why
 In my current job I work a lot with container technologies, and for a lot of items I want to automate the stuff I use at home with the same tech. Unfortunatley, I don't have the cash for racks full of servers, SAN's, fiber switches etc etc (my girlfriend would also kill me). So I had to scale down a bit and reuse the equipment I already have. 
 
 # What
@@ -38,10 +38,15 @@ This is easy: you
 - Micro USB power cables
 - Flat ethernet cables (as short as possible)
 
+# The setup
+<<TODO: create diagram>>
+In this tutorial we will 2 raspberry pi's. 
 # Prerequisites
 First download the latest Hypriot linux build for your raspberry and write them to the sd cards. 
 I recommend to give your raspberries static IP's or give them static IP's through DHCP. Log in to the raspberries and
-give them a nice hostname (when you are at it, dont forget to update). Kubernetes takes the amount of available memory in account, so we need to disable swap. Do this by removing the swap entry from /etc/fstab and the command: ```swapoff -a```. You have to do this on all hosts
+give them a nice hostname (when you are at it, dont forget to update). Kubernetes takes the amount of available memory in account, so we need to disable swap. Do this by removing the swap entry from /etc/fstab and the command: ```swapoff -a```. You have to do this on all hosts. 
+
+Hypriot comes with docker already installed but if you used a different OS image or using vagrant you probably need to install docker yourself.
 
 # Installing the master
 First we need to install kubeadm. Kubeadm is the tool that manages the lifecycle of a Kubernetes cluster. As kubeadm is not in the default repositories we need to install the kubernetes repository first, before we can use it we also need to add the GPG key:  
@@ -53,7 +58,7 @@ add-apt-repository "deb https://download.docker.com/linux/debian $(lsb_release -
 When we have the repository available we can install kubeadm with the following command: ```apt install -y kubeadm```  
 Kubeadm expects already to have an available kubelet. Kubelet is the component on every kubernetes machine (masters and workers) that starts the pods.
 Install kubelet: ```apt install -y kubelet```. Note: when you are using Vagrant you need to edit the kubelet configuration to use the secondary nic:
-open ```/etc/default/kubelet``` in your favorite editor and make sure the following line is present: ```KUBELET_EXTRA_ARGS=--node-ip=192.168.10.10```, where 192.168.10.10 is the ip of the secondairy nic. Restart kubelet afterwards (systemctl restart kubelet).
+open ```/etc/default/kubelet``` in your favorite editor and make sure the following line is present: ```KUBELET_EXTRA_ARGS=--node-ip=192.168.10.10```, where 192.168.10.10 is the ip of the secondairy nic. Restart kubelet afterwards (```systemctl restart kubelet```).
 
 The full init process takes a while and can sometimes fail on pulling images. To reduce the chance of this happening, we can prepull the images with:
 ```kubeadm config images pull``` Run this until all images are successfully pulled.
@@ -63,35 +68,25 @@ Now comes the big step, we will start the initialization process of the cluster.
 ```
 kubeadm init \
   --pod-network-cidr=10.244.0.0/16 \
-  --kubernetes-version=1.12.0
+  --kubernetes-version=1.12.1
 ```
 when using vagrant you need to add: ```--apiserver-advertise-address=192.168.10.10```, where 192.168.10.10 is the ip of the secondairy nic.
 ![Kubeadm init output](/images/2018-11-homelab/kubeadm_init.png)
 
-As the the Kubernetes apiserver starts slower then amount of it time it has to start kubelet will kill the starting container and tries again. To prevent this, we will need to update the deployment manifest of the apiserver to make sure it gets more time. Open /etc/kubernetes/manifests/kube-apiserver.yaml in your favorite editor (or just use sed) and find this line: ```failureThreshold: 8```, replace the 8 with 20 and save. Now we need to wait or kill the apiserver by ourselves.  
- <<TODO: how to kill apiserver>>
+As the the Kubernetes apiserver starts slower then amount of it time it has to start kubelet will kill the starting container and tries again. To prevent this, we will need to update the deployment manifest of the apiserver to make sure it gets more time. Open /etc/kubernetes/manifests/kube-apiserver.yaml in your favorite editor (or just use sed) and find this line: ```failureThreshold: 8```, replace the 8 with 20 and save. Now we need to wait or kill the apiserver by ourselves. To kill the apiserver you can use the command: ```docker ps -q --filter ancestor=k8s.gcr.io/kube-apiserver:v1.12.1|xargs docker kill```, where v1.12.1 is the same as version mentioned above. Or if you want to do it manually, lookup the docker container with docker ps and find the one that has "kube-apiserver --au…" in the command colomn and kill the container with ```docker kill containerID=first_column_of_previous_command```. Now you its waiting until it finnishes, the output should look like the screenshot above.
 
 # Installing the node (or multiple)
 Installing the nodes is a lot similar to installing the masters. We start by installing kubeadm and kubelet (```apt install -y kubelet kubeadm```).  Note: when you are using Vagrant you need to edit the kubelet configuration to use the secondary nic:
-open ```/etc/default/kubelet``` in your favorite editor and make sure the following line is present: ```KUBELET_EXTRA_ARGS=--node-ip=192.168.10.10```, where 192.168.10.10 is the ip of the secondary nic. Restart kubelet afterwards (systemctl restart kubelet). In the output of the init command of the master a line came how you can have the node join the master. In case you lost this output or you have to wait too long (it expires after 24 hours), you can do it as well with the following steps on the master:
+open ```/etc/default/kubelet``` in your favorite editor and make sure the following line is present: ```KUBELET_EXTRA_ARGS=--node-ip=192.168.10.10```, where 192.168.10.10 is the ip of the secondary nic. Restart kubelet afterwards (systemctl restart kubelet). In the output of the init command of the master a line came how you can have the node join the master. In case you lost this output or you have to wait too long (it expires after 24 hours), you can do it as well with the following command on the master:
 ```
-kubeadm token create
-openssl x509 -pubkey -in /etc/kubernetes/pki/ca.crt | openssl rsa -pubin -outform der 2>/dev/null | openssl dgst -sha256 -hex | sed 's/^.* //'
+kubeadm token create  --print-join-command
 ```
-<<TODO: insert screenshot of tokenstuff>>  
-
-On the node we will use the output of the commands in the join command:
-```
-kubeadm join 192.168.10.10:6443 \
-  --token <<output of the first command>> \
-  --discovery-token-ca-cert-hash sha256:<<output of the second command>>
-```
+On the node we will run the output of the command in the join command
 ![Kubeadm join output](/images/2018-11-homelab/kubeadm_join.png)
 
 # Configuring kubectl
-To access the newly Kubernetes cluster we will use the commandline tool called kubectl, people like me dont like to type it fully everytime, so I tend to alias it
-<<TODO: how to install kubectl>>
-export KUBECONFIG=/etc/kubernetes/admin.conf
+To access the newly Kubernetes cluster we will use the commandline tool called kubectl. Most likely its already installed, but if not you can install it with
+```apt install -y kubectl```. Kubectl does need to know where to find the Kubernetes apiserver, we can configure this by telling kubectl where the config is located. On the master run ```export KUBECONFIG=/etc/kubernetes/admin.conf``` (it can be smart to put it in your profile). As I am a lazy person I have created an alias called k for kubectl: ```alias k=kubectl``` (you can also save this in your profile). 
 
 # Networking
 As Kubernetes allows you to choose which networking plugin you want to use, it comes default without. This is why you nodes show as NotReady:
@@ -108,6 +103,9 @@ After a short while your nodes will turn to ready:
 # Finishing touches
 - helm?
 - 
+
+# Last remarks
+As raspberries have a filesystem on an sd flashcard, dont expect it to run forever. Dont keep data here that is really precious to you. 
 
 # What I still want to do
 Adding monitoring
