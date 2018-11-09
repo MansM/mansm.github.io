@@ -56,7 +56,7 @@ Hypriot comes with docker already installed but if you used a different OS image
 
 curl -fsSL https://download.docker.com/linux/debian/gpg | apt-key add -
 apt-add-repository "deb https://download.docker.com/linux/debian $(lsb_release -cs) stable"
-apt update -y
+apt update -y && apt install -y docker-ce
 ```
 
 
@@ -75,6 +75,7 @@ When we have the repository available we can install kubeadm with the following 
 Kubeadm expects already to have an available kubelet. Kubelet is the component on every kubernetes machine (masters and workers) that starts the pods.
 Install kubelet: ```apt install -y kubelet```. Note: when you are using Vagrant you need to edit the kubelet configuration to use the secondary nic:
 open ```/etc/default/kubelet``` in your favorite editor and make sure the following line is present: ```KUBELET_EXTRA_ARGS=--node-ip=192.168.10.10```, where 192.168.10.10 is the ip of the secondairy nic. Restart kubelet afterwards (```systemctl restart kubelet```).
+<<TODO: test without restarting kubelet just yet>>
 
 The full init process takes a while and can sometimes fail on pulling images. To reduce the chance of this happening, we can prepull the images with:
 ```kubeadm config images pull``` Run this until all images are successfully pulled.
@@ -86,6 +87,8 @@ kubeadm init \
   --pod-network-cidr=10.244.0.0/16 \
   --kubernetes-version=1.12.1
 ```
+
+<<TODO: --ignore-preflight-errors=all>>
 when using vagrant you need to add: ```--apiserver-advertise-address=192.168.10.10```, where 192.168.10.10 is the ip of the secondairy nic.
 ![Kubeadm init output](/images/2018-11-homelab/kubeadm_init.png)
 
@@ -93,7 +96,7 @@ As the the Kubernetes apiserver starts slower then amount of it time it has to s
 
 # Installing the node (or multiple)
 Installing the nodes is a lot similar to installing the masters. We start by installing kubeadm and kubelet (```apt install -y kubelet kubeadm```).  Note: when you are using Vagrant you need to edit the kubelet configuration to use the secondary nic:
-open ```/etc/default/kubelet``` in your favorite editor and make sure the following line is present: ```KUBELET_EXTRA_ARGS=--node-ip=192.168.10.10```, where 192.168.10.10 is the ip of the secondary nic. Restart kubelet afterwards (systemctl restart kubelet). In the output of the init command of the master a line came how you can have the node join the master. In case you lost this output or you have to wait too long (it expires after 24 hours), you can do it as well with the following command on the master:
+open ```/etc/default/kubelet``` in your favorite editor and make sure the following line is present: ```KUBELET_EXTRA_ARGS=--node-ip=192.168.10.20```, where 192.168.10.10 is the ip of the secondary nic. Restart kubelet afterwards (systemctl restart kubelet). In the output of the init command of the master a line came how you can have the node join the master. In case you lost this output or you have to wait too long (it expires after 24 hours), you can do it as well with the following command on the master:
 ```
 kubeadm token create  --print-join-command
 ```
@@ -124,8 +127,8 @@ After a short while your nodes will turn to ready:
 As raspberries have a filesystem on an sd flashcard, dont expect it to run forever. Dont keep data here that is really precious to you. 
 
 # What I still want to do
-Adding monitoring
-Adding logging
-Using PoE powered Raspberry Pi 3b+
-Using MetalLB with Ubiquiti USG for 
+- Adding monitoring
+- Adding logging
+- Using PoE powered Raspberry Pi 3b+
+- Using MetalLB with Ubiquiti USG for loadbalancing
 

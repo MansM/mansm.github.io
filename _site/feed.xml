@@ -6,8 +6,8 @@
 </description>
     <link>http://0.0.0.0:4000/</link>
     <atom:link href="http://0.0.0.0:4000/feed.xml" rel="self" type="application/rss+xml"/>
-    <pubDate>Fri, 09 Nov 2018 06:12:54 -0600</pubDate>
-    <lastBuildDate>Fri, 09 Nov 2018 06:12:54 -0600</lastBuildDate>
+    <pubDate>Fri, 09 Nov 2018 06:58:00 -0600</pubDate>
+    <lastBuildDate>Fri, 09 Nov 2018 06:58:00 -0600</lastBuildDate>
     <generator>Jekyll v3.8.3</generator>
     
       <item>
@@ -69,7 +69,7 @@ give them a nice hostname (when you are at it, dont forget to update). Kubernete
 &lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;
 curl -fsSL https://download.docker.com/linux/debian/gpg | apt-key add -
 apt-add-repository &quot;deb https://download.docker.com/linux/debian $(lsb_release -cs) stable&quot;
-apt update -y
+apt update -y &amp;amp;&amp;amp; apt install -y docker-ce
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
 
 &lt;h1 id=&quot;installing-the-master&quot;&gt;Installing the master&lt;/h1&gt;
@@ -82,7 +82,8 @@ apt-add-repository &quot;deb http://apt.kubernetes.io/ kubernetes-xenial main&qu
 When we have the repository available we can install kubeadm with the following command: &lt;code class=&quot;highlighter-rouge&quot;&gt;apt install -y kubeadm&lt;/code&gt;&lt;br /&gt;
 Kubeadm expects already to have an available kubelet. Kubelet is the component on every kubernetes machine (masters and workers) that starts the pods.
 Install kubelet: &lt;code class=&quot;highlighter-rouge&quot;&gt;apt install -y kubelet&lt;/code&gt;. Note: when you are using Vagrant you need to edit the kubelet configuration to use the secondary nic:
-open &lt;code class=&quot;highlighter-rouge&quot;&gt;/etc/default/kubelet&lt;/code&gt; in your favorite editor and make sure the following line is present: &lt;code class=&quot;highlighter-rouge&quot;&gt;KUBELET_EXTRA_ARGS=--node-ip=192.168.10.10&lt;/code&gt;, where 192.168.10.10 is the ip of the secondairy nic. Restart kubelet afterwards (&lt;code class=&quot;highlighter-rouge&quot;&gt;systemctl restart kubelet&lt;/code&gt;).&lt;/p&gt;
+open &lt;code class=&quot;highlighter-rouge&quot;&gt;/etc/default/kubelet&lt;/code&gt; in your favorite editor and make sure the following line is present: &lt;code class=&quot;highlighter-rouge&quot;&gt;KUBELET_EXTRA_ARGS=--node-ip=192.168.10.10&lt;/code&gt;, where 192.168.10.10 is the ip of the secondairy nic. Restart kubelet afterwards (&lt;code class=&quot;highlighter-rouge&quot;&gt;systemctl restart kubelet&lt;/code&gt;).
+«TODO: test without restarting kubelet just yet»&lt;/p&gt;
 
 &lt;p&gt;The full init process takes a while and can sometimes fail on pulling images. To reduce the chance of this happening, we can prepull the images with:
 &lt;code class=&quot;highlighter-rouge&quot;&gt;kubeadm config images pull&lt;/code&gt; Run this until all images are successfully pulled.
@@ -93,14 +94,16 @@ open &lt;code class=&quot;highlighter-rouge&quot;&gt;/etc/default/kubelet&lt;/co
   --pod-network-cidr=10.244.0.0/16 \
   --kubernetes-version=1.12.1
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-&lt;p&gt;when using vagrant you need to add: &lt;code class=&quot;highlighter-rouge&quot;&gt;--apiserver-advertise-address=192.168.10.10&lt;/code&gt;, where 192.168.10.10 is the ip of the secondairy nic.
+
+&lt;p&gt;«TODO: –ignore-preflight-errors=all»
+when using vagrant you need to add: &lt;code class=&quot;highlighter-rouge&quot;&gt;--apiserver-advertise-address=192.168.10.10&lt;/code&gt;, where 192.168.10.10 is the ip of the secondairy nic.
 &lt;img src=&quot;/images/2018-11-homelab/kubeadm_init.png&quot; alt=&quot;Kubeadm init output&quot; /&gt;&lt;/p&gt;
 
 &lt;p&gt;As the the Kubernetes apiserver starts slower then amount of it time it has to start kubelet will kill the starting container and tries again. To prevent this, we will need to update the deployment manifest of the apiserver to make sure it gets more time. Open /etc/kubernetes/manifests/kube-apiserver.yaml in your favorite editor (or just use sed) and find this line: &lt;code class=&quot;highlighter-rouge&quot;&gt;failureThreshold: 8&lt;/code&gt;, replace the 8 with 20 and save. Now we need to wait or kill the apiserver by ourselves. To kill the apiserver you can use the command: &lt;code class=&quot;highlighter-rouge&quot;&gt;docker ps -q --filter ancestor=k8s.gcr.io/kube-apiserver:v1.12.1|xargs docker kill&lt;/code&gt;, where v1.12.1 is the same as version mentioned above. Or if you want to do it manually, lookup the docker container with docker ps and find the one that has “kube-apiserver –au…” in the command colomn and kill the container with &lt;code class=&quot;highlighter-rouge&quot;&gt;docker kill containerID=first_column_of_previous_command&lt;/code&gt;. Now you its waiting until it finnishes, the output should look like the screenshot above.&lt;/p&gt;
 
 &lt;h1 id=&quot;installing-the-node-or-multiple&quot;&gt;Installing the node (or multiple)&lt;/h1&gt;
 &lt;p&gt;Installing the nodes is a lot similar to installing the masters. We start by installing kubeadm and kubelet (&lt;code class=&quot;highlighter-rouge&quot;&gt;apt install -y kubelet kubeadm&lt;/code&gt;).  Note: when you are using Vagrant you need to edit the kubelet configuration to use the secondary nic:
-open &lt;code class=&quot;highlighter-rouge&quot;&gt;/etc/default/kubelet&lt;/code&gt; in your favorite editor and make sure the following line is present: &lt;code class=&quot;highlighter-rouge&quot;&gt;KUBELET_EXTRA_ARGS=--node-ip=192.168.10.10&lt;/code&gt;, where 192.168.10.10 is the ip of the secondary nic. Restart kubelet afterwards (systemctl restart kubelet). In the output of the init command of the master a line came how you can have the node join the master. In case you lost this output or you have to wait too long (it expires after 24 hours), you can do it as well with the following command on the master:&lt;/p&gt;
+open &lt;code class=&quot;highlighter-rouge&quot;&gt;/etc/default/kubelet&lt;/code&gt; in your favorite editor and make sure the following line is present: &lt;code class=&quot;highlighter-rouge&quot;&gt;KUBELET_EXTRA_ARGS=--node-ip=192.168.10.20&lt;/code&gt;, where 192.168.10.10 is the ip of the secondary nic. Restart kubelet afterwards (systemctl restart kubelet). In the output of the init command of the master a line came how you can have the node join the master. In case you lost this output or you have to wait too long (it expires after 24 hours), you can do it as well with the following command on the master:&lt;/p&gt;
 &lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;kubeadm token create  --print-join-command
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
 &lt;p&gt;On the node we will run the output of the command in the join command
@@ -131,10 +134,12 @@ After a short while your nodes will turn to ready:&lt;br /&gt;
 &lt;p&gt;As raspberries have a filesystem on an sd flashcard, dont expect it to run forever. Dont keep data here that is really precious to you.&lt;/p&gt;
 
 &lt;h1 id=&quot;what-i-still-want-to-do&quot;&gt;What I still want to do&lt;/h1&gt;
-&lt;p&gt;Adding monitoring
-Adding logging
-Using PoE powered Raspberry Pi 3b+
-Using MetalLB with Ubiquiti USG for&lt;/p&gt;
+&lt;ul&gt;
+  &lt;li&gt;Adding monitoring&lt;/li&gt;
+  &lt;li&gt;Adding logging&lt;/li&gt;
+  &lt;li&gt;Using PoE powered Raspberry Pi 3b+&lt;/li&gt;
+  &lt;li&gt;Using MetalLB with Ubiquiti USG for loadbalancing&lt;/li&gt;
+&lt;/ul&gt;
 
 </description>
         <pubDate>Sun, 30 Sep 2018 12:00:00 -0500</pubDate>
