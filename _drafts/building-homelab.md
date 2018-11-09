@@ -46,13 +46,29 @@ First download the latest Hypriot linux build for your raspberry and write them 
 I recommend to give your raspberries static IP's or give them static IP's through DHCP. Log in to the raspberries and
 give them a nice hostname (when you are at it, dont forget to update). Kubernetes takes the amount of available memory in account, so we need to disable swap. Do this by removing the swap entry from /etc/fstab and the command: ```swapoff -a```. You have to do this on all hosts. 
 
+Install the following components on all:
+```
+apt install -y  curl software-properties-common apt-transport-https
+```
+
 Hypriot comes with docker already installed but if you used a different OS image or using vagrant you probably need to install docker yourself.
+```
+
+curl -fsSL https://download.docker.com/linux/debian/gpg | apt-key add -
+apt-add-repository "deb https://download.docker.com/linux/debian $(lsb_release -cs) stable"
+apt update -y
+```
+
+
 
 # Installing the master
 First we need to install kubeadm. Kubeadm is the tool that manages the lifecycle of a Kubernetes cluster. As kubeadm is not in the default repositories we need to install the kubernetes repository first, before we can use it we also need to add the GPG key:  
+
+
+
 ```
 curl -fsSL https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add -
-add-apt-repository "deb https://download.docker.com/linux/debian $(lsb_release -cs) stable"
+apt-add-repository "deb http://apt.kubernetes.io/ kubernetes-xenial main"
 ```
 <br/>
 When we have the repository available we can install kubeadm with the following command: ```apt install -y kubeadm```  

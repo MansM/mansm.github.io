@@ -6,8 +6,8 @@
 </description>
     <link>http://0.0.0.0:4000/</link>
     <atom:link href="http://0.0.0.0:4000/feed.xml" rel="self" type="application/rss+xml"/>
-    <pubDate>Tue, 23 Oct 2018 04:01:21 -0500</pubDate>
-    <lastBuildDate>Tue, 23 Oct 2018 04:01:21 -0500</lastBuildDate>
+    <pubDate>Fri, 09 Nov 2018 06:12:54 -0600</pubDate>
+    <lastBuildDate>Fri, 09 Nov 2018 06:12:54 -0600</lastBuildDate>
     <generator>Jekyll v3.8.3</generator>
     
       <item>
@@ -61,12 +61,22 @@ In this tutorial we will 2 raspberry pi’s.&lt;/p&gt;
 I recommend to give your raspberries static IP’s or give them static IP’s through DHCP. Log in to the raspberries and
 give them a nice hostname (when you are at it, dont forget to update). Kubernetes takes the amount of available memory in account, so we need to disable swap. Do this by removing the swap entry from /etc/fstab and the command: &lt;code class=&quot;highlighter-rouge&quot;&gt;swapoff -a&lt;/code&gt;. You have to do this on all hosts.&lt;/p&gt;
 
+&lt;p&gt;Install the following components on all:&lt;/p&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;apt install -y  curl software-properties-common apt-transport-https
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
 &lt;p&gt;Hypriot comes with docker already installed but if you used a different OS image or using vagrant you probably need to install docker yourself.&lt;/p&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;
+curl -fsSL https://download.docker.com/linux/debian/gpg | apt-key add -
+apt-add-repository &quot;deb https://download.docker.com/linux/debian $(lsb_release -cs) stable&quot;
+apt update -y
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
 
 &lt;h1 id=&quot;installing-the-master&quot;&gt;Installing the master&lt;/h1&gt;
 &lt;p&gt;First we need to install kubeadm. Kubeadm is the tool that manages the lifecycle of a Kubernetes cluster. As kubeadm is not in the default repositories we need to install the kubernetes repository first, before we can use it we also need to add the GPG key:&lt;/p&gt;
+
 &lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;curl -fsSL https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add -
-add-apt-repository &quot;deb https://download.docker.com/linux/debian $(lsb_release -cs) stable&quot;
+apt-add-repository &quot;deb http://apt.kubernetes.io/ kubernetes-xenial main&quot;
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
 &lt;p&gt;&lt;br /&gt;
 When we have the repository available we can install kubeadm with the following command: &lt;code class=&quot;highlighter-rouge&quot;&gt;apt install -y kubeadm&lt;/code&gt;&lt;br /&gt;
